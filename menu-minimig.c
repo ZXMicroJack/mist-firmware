@@ -16,10 +16,12 @@
 #include "cue_parser.h"
 
 // TODO!
+#ifndef NOSPIN
 #define SPIN() asm volatile ( "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0");
+#endif
 extern unsigned char drives;
 extern adfTYPE df[4];
 static hardfileTYPE t_hardfile[HARDFILES]; // temporary copy of former hardfile configuration

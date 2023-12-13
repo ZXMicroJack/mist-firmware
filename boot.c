@@ -13,10 +13,12 @@
 #include "font.h"
 
 // TODO!
+#ifndef NOSPIN
 #define SPIN() asm volatile ( "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0");
+#endif
 
 static void mem_upload_init(unsigned long addr) {
   spi_osd_cmd32le_cont(OSD_CMD_WR, addr);

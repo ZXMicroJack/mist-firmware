@@ -40,6 +40,11 @@ extern char fs_pFileExt[13];
 //////////////////////////
 static unsigned char selected_drive_slot;
 
+static void strpad(char *d, char c, int n) {
+	while (*d) d++;
+	while (n--) *d++ = c;
+	*d = '\0';
+}
 
 static void substrcpy(char *d, char *s, char idx) {
 	char p = 0;
@@ -338,8 +343,8 @@ static char GetMenuItem_8bit(uint8_t idx, char action, menu_item_t *item) {
 			s[0] = ' ';
 			substrcpy(s+1, p, 1);
 			strcat(s, ":");
-			l = 26-l-strlen(s); 
-			while(l-- >= 0) strcat(s, " ");
+			l = 26-l-strlen(s);
+			strpad(s, ' ', l);
 			substrcpy(s+strlen(s), p, 2+x);
 		} else {
 			return 0;

@@ -43,10 +43,12 @@ uint8_t rstval = 0;
 #define CMD_HDRID 0xAACA
 
 // TODO!
+#ifndef NOSPIN
 #define SPIN() asm volatile ( "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0");
+#endif
 
 extern char s[FF_LFN_BUF + 1];
 extern adfTYPE df[4];
@@ -932,6 +934,7 @@ void fpga_init(const char *name) {
   // wait max 100 msec for a valid core type
   time = GetTimer(100);
   do {
+	  printf("ct%02X\n", ct);
     EnableIO();
     ct = SPI(0xff);
     DisableIO();

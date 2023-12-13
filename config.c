@@ -61,10 +61,12 @@ static const ini_var_t config_ini_vars[] = {
 };
 
 // TODO fix SPIN macros all over the place!
+#ifndef NOSPIN
 #define SPIN() asm volatile ( "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0")
+#endif
 
 static void ClearKickstartMirrorE0(void)
 {

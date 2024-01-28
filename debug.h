@@ -64,7 +64,7 @@
 #define usb_debugf(...)
 #endif
 
-#if 1
+#if 0
 #define hidp_debugf(a, ...)  iprintf("\033[1;34mHIDP: " a "\033[0m\n", ##__VA_ARGS__)
 #else
 #define hidp_debugf(...)

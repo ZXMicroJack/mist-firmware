@@ -887,7 +887,6 @@ static uint8_t usb_hid_poll(usb_device_t *dev) {
 	for(i=0;i<info->bNumIfaces;i++) {
 		usb_hid_iface_info_t *iface = info->iface+i;
 		if(iface->device_type != HID_DEVICE_UNKNOWN) {
-
 			if (timer_check(iface->qLastPollTime, iface->interval)) { // poll at requested rate
 			//      hid_debugf("poll %d...", iface->ep.epAddr);
 				uint16_t read = iface->ep.maxPktSize;

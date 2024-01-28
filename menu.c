@@ -365,7 +365,11 @@ static char CoreFileSelected(uint8_t idx, const char *SelectedName) {
 			return 0;
 		}
 		strcpy(s, arc_get_rbfname());
-		strcat(s, ".RBF");
+#ifdef XILINX
+  	strcat(s, ".BIT");
+#else
+  	strcat(s, ".RBF");
+#endif
 		rbfname = (char*) &s;
 	}
 	user_io_reset();
@@ -570,7 +574,11 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					break;
 				case 12:
 					if(arc_get_rbfname() && *arc_get_rbfname()) {
+#ifdef XILINX
+						siprintf(s, "%*s%s.BIT", (29-strlen(arc_get_rbfname()))/2-2, " ", arc_get_rbfname());
+#else
 						siprintf(s, "%*s%s.RBF", (29-strlen(arc_get_rbfname()))/2-2, " ", arc_get_rbfname());
+#endif
 						item->item = s;
 					}
 					item->active = 0;
@@ -841,7 +849,11 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					}
 					break;
 				case 13:
+#ifdef XILINX
+					SelectFileNG("BITARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
+#else
 					SelectFileNG("RBFARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
+#endif
 					break;
 				case 21:
 				case 22:
@@ -975,7 +987,11 @@ void SelectFile(char* pFileExt, unsigned char Options, unsigned char MenuSelect,
 
 	menu_debugf("pFileExt = %3s\n", pFileExt);
 	strcpy(fs_pFileExt, pFileExt);
+#ifdef XILINX
+	fs_ShowExt = ((strlen(fs_pFileExt)>3 && strncmp(fs_pFileExt, "BITARC", 6)) || strchr(fs_pFileExt, '*') || strchr(fs_pFileExt, '?'));
+#else
 	fs_ShowExt = ((strlen(fs_pFileExt)>3 && strncmp(fs_pFileExt, "RBFARC", 6)) || strchr(fs_pFileExt, '*') || strchr(fs_pFileExt, '?'));
+#endif
 	fs_Options = Options;
 	fs_MenuSelect = MenuSelect;
 
@@ -1192,7 +1208,11 @@ void HandleUI(void)
 					}
 					// the "menu" core is special in jumps directly to the core selection menu
 					if(!strcmp(user_io_get_core_name(), "MENU") || (user_io_get_core_features() & FEAT_MENU)) {
+#ifdef XILINX
+						SelectFileNG("BITARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
+#else
 						SelectFileNG("RBFARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
+#endif
 					}
 				}
 

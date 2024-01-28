@@ -215,7 +215,7 @@ int main(void)
     } else {
         user_io_set_core_mod(mod);
         strncpy(s, arc_get_rbfname(), sizeof(s)-5);
-        strcat(s,".RBF");
+        strcat(s,".");
         fpga_init(s);
     }
 

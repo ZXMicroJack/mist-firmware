@@ -67,6 +67,7 @@ uint8_t joystick_release(uint8_t c_jindex) {
 				}
 			}
 		}
+#ifndef EXCL_XBOX_JPAD
 		if(dev[j].bAddress && (dev[j].class == &usb_xbox_class)) {
 			uint8_t jindex = joystick_index(dev[j].xbox_info.jindex);
 			if(jindex > c_jindex) {
@@ -75,7 +76,7 @@ uint8_t joystick_release(uint8_t c_jindex) {
 				StateUsbIdSet( dev[j].vid, dev[j].pid, 8/*button_count*/, dev[j].xbox_info.jindex);
 			}
 		}
-
+#endif
 	}
 	// one less joystick in the system ...
 	joysticks--;

@@ -42,7 +42,7 @@ const ini_var_t core_ini_local_vars[] = {
 
 static char settings_setup(ini_cfg_t *ini, char global) {
 	if(global) {
-		ini->filename = "/MISTCFG.INI";
+		ini->filename = MIST_ROOT "/MISTCFG.INI";
 	} else {
 		if(user_io_core_type() == CORE_TYPE_8BIT &&
 		   !user_io_create_config_name(s, "CFG", CONFIG_ROOT)) {

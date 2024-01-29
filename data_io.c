@@ -254,7 +254,7 @@ void data_io_rom_upload(char *rname, char mode) {
   } else
     iprintf("Error opening file %s (%d)!\n", fname, res);
 
-  ChangeDirectoryName("/");
+  ChangeDirectoryName(MIST_ROOT);
 #ifdef XILINX
   ScanDirectory(SCAN_INIT, "BIT",  SCAN_LFN | SCAN_SYSDIR);
 #else

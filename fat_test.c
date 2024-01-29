@@ -133,7 +133,7 @@ void ScanDirectoryTest() {
 	unsigned long lastStartCluster;
 	int page = 0;
 
-	ChangeDirectoryName(TESTDIR);
+	ChangeDirectoryName(MIST_ROOT TESTDIR);
 
 	ScanDirectory(SCAN_INIT, "*", SCAN_DIR | SCAN_LFN);
 	printf("nDirEntries = %d\n", nDirEntries);

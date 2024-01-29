@@ -1064,7 +1064,7 @@ void tos_upload(const char *name) {
   tos_debugf("Uploading TOS");
 
   ResetMenu();
-  ChangeDirectoryName("/");
+  ChangeDirectoryName(MIST_ROOT);
 
   if(name) {
     strncpy(config.tos_img, name, sizeof(config.tos_img));

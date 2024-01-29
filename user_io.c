@@ -181,7 +181,7 @@ char user_io_create_config_name(char *s, const char *ext, char flags) {
 	if (flags & CONFIG_VHD) p = arc_get_vhdname();
 	if (!p || !*p) p = user_io_get_core_name();
 	if(p[0]) {
-		if (flags & CONFIG_ROOT) strcpy(s,"/"); else s[0] = 0;
+		if (flags & CONFIG_ROOT) strcpy(s,MIST_ROOT "/"); else s[0] = 0;
 		strcat(s, p);
 		if (ext) {
 			strcat(s,".");
@@ -2535,7 +2535,7 @@ unsigned char user_io_ext_idx(const char *name, const char* ext) {
 void user_io_change_into_core_dir(void) {
 
 	if (arc_get_dirname()[0]) {
-		strcpy(s, "/");
+		strcpy(s, MIST_ROOT);
 		strcat(s, arc_get_dirname());
 	} else {
 		user_io_create_config_name(s, 0, CONFIG_ROOT);

@@ -195,7 +195,7 @@ void archie_init(void) {
   archie_debugf("init");
 
   ResetMenu();
-  ChangeDirectoryName("/");
+  ChangeDirectoryName(MIST_ROOT);
 
   // set config defaults
   config.system_ctrl = 0;

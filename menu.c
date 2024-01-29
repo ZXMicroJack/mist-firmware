@@ -850,7 +850,7 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					break;
 				case 13:
 #ifdef XILINX
-					SelectFileNG("BITARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
+					SelectFileNG("BITARC", SCAN_LFN, CoreFileSelected, 0);
 #else
 					SelectFileNG("RBFARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
 #endif
@@ -977,7 +977,7 @@ void SelectFile(char* pFileExt, unsigned char Options, unsigned char MenuSelect,
 
 	if (strncmp(pFileExt, fs_pFileExt, 12) != 0) // check desired file extension
 	{ // if different from the current one go to the root directory and init entry buffer
-		ChangeDirectoryName("/");
+		ChangeDirectoryName(MIST_ROOT);
 
 		// for 8 bit cores try to 
 		if(((user_io_core_type() == CORE_TYPE_8BIT) || (user_io_core_type() == CORE_TYPE_ARCHIE)) && chdir)
@@ -1209,7 +1209,7 @@ void HandleUI(void)
 					// the "menu" core is special in jumps directly to the core selection menu
 					if(!strcmp(user_io_get_core_name(), "MENU") || (user_io_get_core_features() & FEAT_MENU)) {
 #ifdef XILINX
-						SelectFileNG("BITARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
+						SelectFileNG("BITARC", SCAN_LFN, CoreFileSelected, 0);
 #else
 						SelectFileNG("RBFARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
 #endif

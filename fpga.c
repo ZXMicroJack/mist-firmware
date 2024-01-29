@@ -993,7 +993,7 @@ void fpga_init(const char *name) {
       WaitTimer(1000);
     }
 
-    ChangeDirectoryName("/");
+    ChangeDirectoryName(MIST_ROOT);
 
     //eject all disk
     df[0].status = 0;

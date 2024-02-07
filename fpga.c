@@ -944,6 +944,11 @@ void fpga_init(const char *name) {
   iprintf("ident = %x\n", ct);
 
   user_io_detect_core_type();
+
+  // for legacy cores - leave the SD card alone
+  if (user_io_core_type() == CORE_TYPE_UNKNOWN)
+    return;
+
   user_io_init_core();
   mist_ini_parse();
   user_io_send_buttons(true);

@@ -852,7 +852,7 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 #ifdef XILINX
 					SelectFileNG("BITARC", SCAN_LFN, CoreFileSelected, 0);
 #else
-					SelectFileNG("RBFARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
+					SelectFileNG("NP1RBFARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
 #endif
 					break;
 				case 21:
@@ -990,7 +990,7 @@ void SelectFile(char* pFileExt, unsigned char Options, unsigned char MenuSelect,
 #ifdef XILINX
 	fs_ShowExt = ((strlen(fs_pFileExt)>3 && strncmp(fs_pFileExt, "BITARC", 6)) || strchr(fs_pFileExt, '*') || strchr(fs_pFileExt, '?'));
 #else
-	fs_ShowExt = ((strlen(fs_pFileExt)>3 && strncmp(fs_pFileExt, "RBFARC", 6)) || strchr(fs_pFileExt, '*') || strchr(fs_pFileExt, '?'));
+	fs_ShowExt = ((strlen(fs_pFileExt)>3 && strncmp(fs_pFileExt, "NP1RBFARC", 6)) || strchr(fs_pFileExt, '*') || strchr(fs_pFileExt, '?'));
 #endif
 	fs_Options = Options;
 	fs_MenuSelect = MenuSelect;
@@ -1211,7 +1211,7 @@ void HandleUI(void)
 #ifdef XILINX
 						SelectFileNG("BITARC", SCAN_LFN, CoreFileSelected, 0);
 #else
-						SelectFileNG("RBFARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
+						SelectFileNG("NP1RBFARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
 #endif
 					}
 				}

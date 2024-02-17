@@ -42,7 +42,10 @@ static unsigned char selected_drive_slot;
 
 static void strpad(char *d, char c, int n) {
 	while (*d) d++;
-	while (n--) *d++ = c;
+	while (n > 0) {
+    *d++ = c;
+    n--;
+  } 
 	*d = '\0';
 }
 

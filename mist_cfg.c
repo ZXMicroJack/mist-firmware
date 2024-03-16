@@ -142,7 +142,7 @@ const ini_cfg_t mist_ini_cfg = {
 #ifdef INI_PARSER_TEST
   "test.ini",
 #else
-  "/MIST.INI",
+  MIST_ROOT"/MIST.INI",
 #endif
   mist_ini_sections,
   mist_ini_vars,

@@ -105,11 +105,12 @@ uint8_t StateJoyGetAnalogue(uint8_t idx, uint8_t joy_num) {
 	return (joy_num < 6 && idx < 4) ? mist_joysticks[joy_num].analogue[idx] : 0;
 }
 
-
+extern void DB9Update(uint8_t joy_num, uint8_t usbjoy);
 void StateUsbJoySet(uint8_t usbjoy, uint8_t usbextra, uint8_t joy_num) {
 	if (joy_num > 5) return;
 	mist_joysticks[joy_num].usb_state = usbjoy;
 	mist_joysticks[joy_num].usb_state_extra = usbextra;
+  DB9Update(joy_num, usbjoy);
 }
 
 uint8_t StateUsbJoyGet(uint8_t joy_num) {

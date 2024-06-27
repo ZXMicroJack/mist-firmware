@@ -365,11 +365,7 @@ static char CoreFileSelected(uint8_t idx, const char *SelectedName) {
 			return 0;
 		}
 		strcpy(s, arc_get_rbfname());
-#ifdef XILINX
-  	strcat(s, ".BIT");
-#else
-  	strcat(s, ".RBF");
-#endif
+  	strcat(s, "."COREEXT);
 		rbfname = (char*) &s;
 	}
 	user_io_reset();
@@ -574,11 +570,7 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					break;
 				case 12:
 					if(arc_get_rbfname() && *arc_get_rbfname()) {
-#ifdef XILINX
-						siprintf(s, "%*s%s.BIT", (29-strlen(arc_get_rbfname()))/2-2, " ", arc_get_rbfname());
-#else
-						siprintf(s, "%*s%s.RBF", (29-strlen(arc_get_rbfname()))/2-2, " ", arc_get_rbfname());
-#endif
+						siprintf(s, "%*s%s."COREEXT, (29-strlen(arc_get_rbfname()))/2-2, " ", arc_get_rbfname());
 						item->item = s;
 					}
 					item->active = 0;
@@ -850,9 +842,9 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					break;
 				case 13:
 #ifdef XILINX
-					SelectFileNG("BITARCZXT", SCAN_LFN, CoreFileSelected, 0);
+					SelectFileNG(COREEXT"ARC"COREEXTOTHER, SCAN_LFN, CoreFileSelected, 0);
 #else
-					SelectFileNG("NP1RBFARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
+					SelectFileNG(COREEXT"ARC"COREEXTOTHER, SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
 #endif
 					break;
 				case 21:
@@ -987,11 +979,7 @@ void SelectFile(char* pFileExt, unsigned char Options, unsigned char MenuSelect,
 
 	menu_debugf("pFileExt = %3s\n", pFileExt);
 	strcpy(fs_pFileExt, pFileExt);
-#ifdef XILINX
-	fs_ShowExt = ((strlen(fs_pFileExt)>3 && strncmp(fs_pFileExt, "BITARCZXT", 6)) || strchr(fs_pFileExt, '*') || strchr(fs_pFileExt, '?'));
-#else
-	fs_ShowExt = ((strlen(fs_pFileExt)>3 && strncmp(fs_pFileExt, "NP1RBFARC", 6)) || strchr(fs_pFileExt, '*') || strchr(fs_pFileExt, '?'));
-#endif
+	fs_ShowExt = ((strlen(fs_pFileExt)>3 && strncmp(fs_pFileExt, COREEXT"ARC"COREEXTOTHER, 6)) || strchr(fs_pFileExt, '*') || strchr(fs_pFileExt, '?'));
 	fs_Options = Options;
 	fs_MenuSelect = MenuSelect;
 
@@ -1209,9 +1197,9 @@ void HandleUI(void)
 					// the "menu" core is special in jumps directly to the core selection menu
 					if(!strcmp(user_io_get_core_name(), "MENU") || (user_io_get_core_features() & FEAT_MENU)) {
 #ifdef XILINX
-						SelectFileNG("BITARCZXT", SCAN_LFN, CoreFileSelected, 0);
+						SelectFileNG(COREEXT"ARC"COREEXTOTHER, SCAN_LFN, CoreFileSelected, 0);
 #else
-						SelectFileNG("NP1RBFARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
+						SelectFileNG(COREEXT"ARC"COREEXTOTHER, SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
 #endif
 					}
 				}

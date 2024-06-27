@@ -7,6 +7,7 @@ IDXFile sd_image[SD_IMAGES];
 void IDXIndex(IDXFile *pIDXF) {
     // builds index to speed up hard file seek
     FIL *file = &pIDXF->file;
+#ifndef NO_FILE_INDEX
     unsigned long  time = GetRTTC();
     FRESULT res;
 
@@ -22,6 +23,9 @@ void IDXIndex(IDXFile *pIDXF) {
       time = GetRTTC() - time;
       iprintf("File indexed in %lu ms, index size = %d\n", time, pIDXF->clmt[0]);
     }
+#else
+    file->cltbl = 0;
+#endif
 }
 
 unsigned char IDXOpen(IDXFile *file, const char *name, char mode) {

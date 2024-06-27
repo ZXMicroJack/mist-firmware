@@ -27,7 +27,9 @@ typedef struct
 {
 	char valid;
 	FIL file;
+#ifndef NO_FILE_INDEX
 	DWORD clmt[SZ_TBL];
+#endif
 } IDXFile;
 
 // sd_image slots:

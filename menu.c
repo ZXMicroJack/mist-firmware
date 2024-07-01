@@ -320,6 +320,16 @@ static char FirmwareUpdateDialog(uint8_t idx) {
 	return 0;
 }
 
+#ifdef ZXUNO
+static char StartupSequenceSet(uint8_t idx) {
+  if ((settings_boot_menu() && idx != 0) || (!settings_boot_menu() && idx == 0)) {
+    settings_set_boot(idx == 0);
+    settings_board_save();
+  }
+	return 0;
+}
+#endif
+
 static char ResetDialog(uint8_t idx) {
 	char m = 0;
 
@@ -551,13 +561,18 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					item->active = 0;
 					}
 					break;
-				case 9:
+ 				case 9:
 					item->item = "           Update";
 					item->active = fat_uses_mmc();
 					item->stipple = !item->active;
 					break;
 				case 10:
+#ifdef ZXUNO
+          item->item = "        Boot sequence";
+          item->active = 1;          
+#else
 					item->active = 0;
+#endif
 					break;
 				case 11:
 					if(strlen(OsdCoreName())<26) {
@@ -840,6 +855,11 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 							FirmwareUpdateError();
 					}
 					break;
+#ifdef ZXUNO
+				case 10:
+          DialogBox("\n     Display MiSTLita menu\n         on startup?", MENU_DIALOG_YESNO, StartupSequenceSet);
+					break;
+#endif
 				case 13:
 #ifdef XILINX
 					SelectFileNG(COREEXT"ARC"COREEXTOTHER, SCAN_LFN, CoreFileSelected, 0);

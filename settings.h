@@ -17,3 +17,11 @@
 
 unsigned char settings_load(char global);
 unsigned char settings_save(char global);
+
+#ifdef ZXUNO
+void settings_board_load();
+void settings_board_save();
+uint8_t settings_boot_menu();
+void settings_set_boot(uint8_t state);
+#endif
+

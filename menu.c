@@ -600,7 +600,7 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
           }
           
 					item->item = s;
-					item->active = item->item ? 1 : 0;
+					item->active = v ? 1 : 0;
           break;
         }
 #endif

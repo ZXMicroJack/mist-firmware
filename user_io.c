@@ -1256,22 +1256,19 @@ void user_io_poll() {
 	unsigned char joy_map = 0;
 
 	if(GetDB9(0, &joy_map)) {
-
 		joy_map = virtual_joystick_mapping(0x00db, 0x0000, joy_map);
-
 		uint8_t idx = joystick_renumber(0);
 		if (!user_io_osd_is_visible()) user_io_joystick(idx, joy_map);
 		StateJoySet(joy_map, mist_cfg.joystick_db9_fixed_index ? idx : joystick_count()); // send to OSD
-		virtual_joystick_keyboard(joy_map);
+		virtual_joystick_keyboard_idx(idx, joy_map);
 	}
+  
 	if(GetDB9(1, &joy_map)) {
-
 		joy_map = virtual_joystick_mapping(0x00db, 0x0001, joy_map);
-
 		uint8_t idx = joystick_renumber(1);
 		if (!user_io_osd_is_visible()) user_io_joystick(idx, joy_map);
 		StateJoySet(joy_map, mist_cfg.joystick_db9_fixed_index ? idx : joystick_count() + 1); // send to OSD
-		virtual_joystick_keyboard(joy_map);
+		virtual_joystick_keyboard_idx(idx, joy_map);
 	}
 
 	if (autofire && autofire_joy >= 0 && autofire_joy <= 5 && CheckTimer(autofire_timer)) {

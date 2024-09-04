@@ -184,7 +184,7 @@ static void usb_xbox_read_report(usb_device_t *dev, uint16_t len, uint8_t *buf) 
 		// new API with all extra buttons
 		user_io_digital_joystick_ext(idx, vjoy);
 
-		virtual_joystick_keyboard( vjoy );
+    virtual_joystick_keyboard_idx( idx, vjoy );
 
 		dev->xbox_info.oldButtons = buttons;
 	}

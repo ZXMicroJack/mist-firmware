@@ -656,3 +656,18 @@ bool virtual_joystick_keyboard ( uint16_t vjoy ) {
 
 	return (buf[0] ? true : false);
 }
+
+/*****************************************************************************/
+static uint16_t prev_vjoy[8] = {0};
+
+bool virtual_joystick_keyboard_idx ( uint8_t idx, uint16_t vjoy ) {
+  if (idx < 8) {
+    if (prev_vjoy[idx] != vjoy) {
+      prev_vjoy[idx] = vjoy;
+      return virtual_joystick_keyboard (vjoy);
+    }
+  }
+  return false;
+}
+
+

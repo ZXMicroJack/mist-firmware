@@ -81,6 +81,7 @@ char joystick_key_map(char *, char, int);
 
 // runtime mapping
 bool virtual_joystick_keyboard ( uint16_t vjoy );
+bool virtual_joystick_keyboard_idx ( uint8_t idx, uint16_t vjoy );
 
 /*****************************************************************************/
 

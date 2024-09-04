@@ -865,12 +865,15 @@ static void usb_process_iface (usb_device_t *dev,
 					handle_5200daptor(dev, iface, buf);
 				
 				// apply keyboard mappings
+        virtual_joystick_keyboard_idx( idx, vjoy );
+#if 0
 				if ((!virt_joy_kbd_iface) || (virt_joy_kbd_iface == iface)) {
-					bool ret = virtual_joystick_keyboard( vjoy );
+					bool ret = virtual_joystick_keyboard_idx( idx, vjoy );
 					virt_joy_kbd_iface = NULL;
 					if (ret)
 						virt_joy_kbd_iface = iface;
 				}
+#endif
 			} // end joystick handling
 		} // end hid custom report parsing
   } // end of HID complex parsing
@@ -943,6 +946,12 @@ int8_t hid_keyboard_present(void) {
 		}
 	}
 	return 0;
+}
+
+void usb_hid_process(usb_device_t *dev, int inst, uint8_t *buf, uint16_t read) {
+  usb_hid_info_t *info = &(dev->hid_info);
+  usb_hid_iface_info_t *iface = info->iface+inst;
+  usb_process_iface (dev, iface, read, buf);
 }
 
 const usb_device_class_config_t usb_hid_class = {

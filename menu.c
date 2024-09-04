@@ -306,9 +306,28 @@ static char FirmwareUpdateError() {
 	return 0;
 }
 
+
+#ifdef RP2040
+static char FirmwareUpdatingUSBDialog(uint8_t idx) {
+  extern int UpdateFirmwareUSB();
+  Error = UpdateFirmwareUSB();
+  FirmwareUpdateError();
+	return 0;
+}
+
+static char FirmwareUpdateUSBDialog(uint8_t idx) {
+	if (idx == 0) { // yes
+		DialogBox("\n   Updating USB firmware\n\n         Please wait\n", 0, FirmwareUpdatingUSBDialog);
+	}
+	return 0;
+}
+#endif
+
 static char FirmwareUpdatingDialog(uint8_t idx) {
 	WriteFirmware("/FIRMWARE.UPG");
+#ifndef RP2040
 	Error = ERROR_UPDATE_FAILED;
+#endif
 	FirmwareUpdateError();
 	return 0;
 }
@@ -546,6 +565,7 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					break;
 
 				// page 1 - firmware & core
+#ifndef RP2040
 				case 7:
 					siprintf(s, "   ARM  s/w ver. %s", version + 5);
 					item->item = s;
@@ -561,6 +581,29 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					item->active = 0;
 					}
 					break;
+#else
+				case 7: {
+          extern const char firmwareVersion[];
+					siprintf(s, "   FIRM s/w ver. %s", firmwareVersion);
+					item->item = s;
+					item->active = 0;
+					break;
+        }
+				case 8: {
+          extern const char *GetUSBVersion();
+          char *v = GetUSBVersion();
+          if (v) {
+            siprintf(s, "   USB  s/w ver. %s", v);
+            item->item = s;
+          } else {
+            s[0] = 0;
+          }
+          
+					item->item = s;
+					item->active = item->item ? 1 : 0;
+          break;
+        }
+#endif
  				case 9:
 					item->item = "           Update";
 					item->active = fat_uses_mmc();
@@ -847,6 +890,13 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					break;
 
 				// page 1 - firmware & core
+#ifdef RP2040
+        case 8: {
+          DialogBox("\n   Update the USB firmware\n        Are you sure?", MENU_DIALOG_YESNO, FirmwareUpdateUSBDialog);
+          break;
+        }
+#endif
+
 				case 9:
 					if (fat_uses_mmc()) {
 						if (CheckFirmware("/FIRMWARE.UPG"))

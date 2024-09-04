@@ -363,7 +363,9 @@ bool parse_report_descriptor(uint8_t *rep, uint16_t rep_size, hid_report_t *conf
 
 				case 8:
 					hidp_extreme_debugf("REPORT_ID(%d)", value);
-					conf->report_id = value;
+					if (!report_is_usable(bit_count, report_complete, conf)) {
+						conf->report_id = value;
+					}
 					break;
 
 				case 9:

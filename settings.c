@@ -24,6 +24,8 @@
 extern char s[FF_LFN_BUF + 1];
 
 static uint64_t status;
+uint8_t joymenu_select = 6;
+uint8_t joymenu_start = 7;
 
 #ifdef ZXUNO
 static uint8_t boot_menu = 1;
@@ -44,7 +46,9 @@ const ini_var_t core_ini_global_vars[] = {
 
 const ini_var_t core_ini_local_vars[] = {
 	{"STATUS", (void*)(&status), UINT64, 0, 0xFFFFFFFFFFFFFFFF, 1},
-	{"JOYSTICK_REMAP", (void*)virtual_joystick_remap, CUSTOM_HANDLER, 0, 0, 1}
+	{"JOYSTICK_REMAP", (void*)virtual_joystick_remap, CUSTOM_HANDLER, 0, 0, 1},
+  {"JOYMENU_SELECT", &joymenu_select, UINT8, 0, 15, 1},
+  {"JOYMENU_START",  &joymenu_start,  UINT8, 0, 15, 1}
 };
 
 static char settings_setup(ini_cfg_t *ini, char global) {
@@ -71,6 +75,11 @@ unsigned char settings_load(char global)
 	ini_cfg_t core_ini_cfg;
 	if (!settings_setup(&core_ini_cfg, global))
 		return 0;
+
+  if (!global) {
+    joymenu_select = 6;
+    joymenu_start = 7;
+  }
 
 	ini_parse(&core_ini_cfg, 0, global ? 1 : 2);
 	if (!global) user_io_8bit_set_status(status, ~1);

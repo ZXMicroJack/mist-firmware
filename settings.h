@@ -25,3 +25,5 @@ uint8_t settings_boot_menu();
 void settings_set_boot(uint8_t state);
 #endif
 
+extern uint8_t joymenu_select;
+extern uint8_t joymenu_start;

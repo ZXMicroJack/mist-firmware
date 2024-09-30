@@ -30,6 +30,7 @@ This file defines how to handle mapping in the MiST controllers in various ways:
 #include "timer.h"
 #include "debug.h"
 #include "joymapping.h"
+#include "settings.h"
 #include "../user_io.h"
 #include "../mist_cfg.h"
 
@@ -555,6 +556,8 @@ bool virtual_joystick_keyboard ( uint16_t vjoy ) {
 
 	// use button combinations as shortcut for certain keys
 	uint8_t buf[6] = { 0,0,0,0,0,0 };
+  uint16_t joy_select = default_joystick_mapping[joymenu_select];
+  uint16_t joy_start = default_joystick_mapping[joymenu_start];
 
 	// if OSD is open control it via USB joystick
 	if(user_io_osd_is_visible() && !mist_cfg.joystick_ignore_osd) {
@@ -568,13 +571,13 @@ bool virtual_joystick_keyboard ( uint16_t vjoy ) {
 		// up and down uses SELECT or L for faster scrolling
 		
 		if(vjoy & JOY_UP) {
-			if (vjoy & JOY_SELECT || vjoy & JOY_L) buf[idx] = 0x4B; // page up
+			if (vjoy & joy_select || vjoy & JOY_L) buf[idx] = 0x4B; // page up
 			else buf[idx] = 0x52; // up arrow
 			if (idx < 6) idx++; //avoid overflow if we assigned 6 already
 		}
 
 		if(vjoy & JOY_DOWN) {
-			if (vjoy & JOY_SELECT || vjoy & JOY_L) buf[idx] = 0x4E; // page down
+			if (vjoy & joy_select || vjoy & JOY_L) buf[idx] = 0x4E; // page down
 			else buf[idx] = 0x51; // down arrow
 			if (idx < 6) idx++; //avoid overflow if we assigned 6 already
 		}
@@ -588,18 +591,22 @@ bool virtual_joystick_keyboard ( uint16_t vjoy ) {
 	} else {
 		
 		// shortcuts mapped if start is pressed (take priority)
-		if (vjoy & JOY_START) {
+		// if (vjoy & JOY_START) {
+    if (vjoy & joy_start) {
 			//iprintf("joy2key START is pressed\n");
 			int idx = 0;
 			if(vjoy & JOY_A)       buf[idx++] = 0x28; // ENTER 
 			if(vjoy & JOY_B)       buf[idx++] = 0x2C; // SPACE
 			if(vjoy & JOY_L)       buf[idx++] = 0x29; // ESC
 			if(vjoy & JOY_R)       buf[idx++] = 0x3A; // F1
-			if(vjoy & JOY_SELECT)  buf[idx++] = 0x45;  //F12 // i.e. open OSD in most cores
+			// if(vjoy & JOY_SELECT)  buf[idx++] = 0x45;  //F12 // i.e. open OSD in most cores
+			if(vjoy & joy_select)  buf[idx++] = 0x45;  //F12 // i.e. open OSD in most cores
+
 		} else {
 
 			// shortcuts with SELECT - mouse emulation
-			if (vjoy & JOY_SELECT) {
+			// if (vjoy & JOY_SELECT) {
+      if (vjoy & joy_select) {
 			//iprintf("joy2key SELECT is pressed\n");
 				unsigned char but = 0;
 				char a0 = 0;

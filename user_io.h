@@ -231,6 +231,7 @@ void user_io_digital_joystick_ext(unsigned char, uint32_t);
 void user_io_analog_joystick(unsigned char, char, char, char, char);
 char user_io_osd_is_visible();
 void user_io_send_buttons(char);
+uint8_t user_io_joystick_renumber(uint8_t j);
 
 char user_io_key_remap(char *, char, int);
 void add_modifiers(uint8_t mod, uint16_t* keys_ps2);

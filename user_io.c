@@ -524,6 +524,16 @@ void user_io_joystick(unsigned char joystick, unsigned char map) {
 		       0 ,0);
 }
 
+void user_io_joystick16(unsigned char joystick, unsigned short map) {
+  // digital joysticks also send analog signals
+	user_io_digital_joystick(joystick, map);
+	user_io_digital_joystick_ext(joystick, map);
+	user_io_analog_joystick(joystick, 
+		       dig2ana(map&JOY_LEFT, map&JOY_RIGHT),
+		       dig2ana(map&JOY_UP, map&JOY_DOWN),
+		       0 ,0);
+}
+
 // transmit serial/rs232 data into core
 void user_io_serial_tx(char *chr, uint16_t cnt) {
 	if (core_type == CORE_TYPE_MIST)
@@ -680,7 +690,7 @@ void user_io_eth_send_rx_frame(uint8_t *s, uint16_t len) {
 // becomes joystick 1 and only the second one becomes joystick 0
 // (mouse port)
 
-static uint8_t joystick_renumber(uint8_t j) {
+uint8_t user_io_joystick_renumber(uint8_t j) {
 	uint8_t usb_sticks = joystick_count();
 
 	// no usb sticks present: no changes are being made
@@ -708,8 +718,8 @@ static uint8_t joystick_renumber(uint8_t j) {
 static void user_io_joystick_emu() {
 	// iprintf("joystick_emu_fixed_index: %d\n", mist_cfg.joystick_emu_fixed_index);
 	// joystick emulation also follows renumbering if requested (default)
-	if(emu_mode == EMU_JOY0) user_io_joystick(mist_cfg.joystick_emu_fixed_index ? 0 : joystick_renumber(0), emu_state);
-	if(emu_mode == EMU_JOY1) user_io_joystick(mist_cfg.joystick_emu_fixed_index ? 1 : joystick_renumber(1), emu_state);
+	if(emu_mode == EMU_JOY0) user_io_joystick(mist_cfg.joystick_emu_fixed_index ? 0 : user_io_joystick_renumber(0), emu_state);
+	if(emu_mode == EMU_JOY1) user_io_joystick(mist_cfg.joystick_emu_fixed_index ? 1 : user_io_joystick_renumber(1), emu_state);
 }
 
 // 16 byte fifo for amiga key codes to limit max key rate sent into the core
@@ -1257,7 +1267,7 @@ void user_io_poll() {
 
 	if(GetDB9(0, &joy_map)) {
 		joy_map = virtual_joystick_mapping(0x00db, 0x0000, joy_map);
-		uint8_t idx = joystick_renumber(0);
+		uint8_t idx = user_io_joystick_renumber(0);
 		if (!user_io_osd_is_visible()) user_io_joystick(idx, joy_map);
 		StateJoySet(joy_map, mist_cfg.joystick_db9_fixed_index ? idx : joystick_count()); // send to OSD
 		virtual_joystick_keyboard_idx(idx, joy_map);
@@ -1265,7 +1275,7 @@ void user_io_poll() {
   
 	if(GetDB9(1, &joy_map)) {
 		joy_map = virtual_joystick_mapping(0x00db, 0x0001, joy_map);
-		uint8_t idx = joystick_renumber(1);
+		uint8_t idx = user_io_joystick_renumber(1);
 		if (!user_io_osd_is_visible()) user_io_joystick(idx, joy_map);
 		StateJoySet(joy_map, mist_cfg.joystick_db9_fixed_index ? idx : joystick_count() + 1); // send to OSD
 		virtual_joystick_keyboard_idx(idx, joy_map);

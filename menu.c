@@ -307,22 +307,6 @@ static char FirmwareUpdateError() {
 }
 
 
-#ifdef RP2040
-static char FirmwareUpdatingUSBDialog(uint8_t idx) {
-  extern int UpdateFirmwareUSB();
-  Error = UpdateFirmwareUSB();
-  FirmwareUpdateError();
-	return 0;
-}
-
-static char FirmwareUpdateUSBDialog(uint8_t idx) {
-	if (idx == 0) { // yes
-		DialogBox("\n   Updating USB firmware\n\n         Please wait\n", 0, FirmwareUpdatingUSBDialog);
-	}
-	return 0;
-}
-#endif
-
 static char FirmwareUpdatingDialog(uint8_t idx) {
 	WriteFirmware("/FIRMWARE.UPG");
 #ifndef RP2040
@@ -338,16 +322,6 @@ static char FirmwareUpdateDialog(uint8_t idx) {
 	}
 	return 0;
 }
-
-#ifdef ZXUNO
-static char StartupSequenceSet(uint8_t idx) {
-  if ((settings_boot_menu() && idx != 0) || (!settings_boot_menu() && idx == 0)) {
-    settings_set_boot(idx == 0);
-    settings_board_save();
-  }
-	return 0;
-}
-#endif
 
 static char ResetDialog(uint8_t idx) {
 	char m = 0;
@@ -581,6 +555,11 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					item->active = 0;
 					}
 					break;
+ 				case 9:
+					item->item = "           Update";
+					item->active = fat_uses_mmc();
+					item->stipple = !item->active;
+					break;
 #else
 				case 7: {
           extern const char firmwareVersion[];
@@ -600,23 +579,14 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
           }
           
 					item->item = s;
-					item->active = v ? 1 : 0;
+					item->active = 0;
           break;
         }
-#endif
  				case 9:
-					item->item = "           Update";
-					item->active = fat_uses_mmc();
-					item->stipple = !item->active;
+          item->item = "      Platform settings";
+          item->active = 1;       
 					break;
-				case 10:
-#ifdef ZXUNO
-          item->item = "        Boot sequence";
-          item->active = 1;          
-#else
-					item->active = 0;
 #endif
-					break;
 				case 11:
 					if(strlen(OsdCoreName())<26) {
 						siprintf(s, "%*s%s", (29-strlen(OsdCoreName()))/2, " ", OsdCoreName());
@@ -890,13 +860,7 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					break;
 
 				// page 1 - firmware & core
-#ifdef RP2040
-        case 8: {
-          DialogBox("\n   Update the USB firmware\n        Are you sure?", MENU_DIALOG_YESNO, FirmwareUpdateUSBDialog);
-          break;
-        }
-#endif
-
+#ifndef RP2040
 				case 9:
 					if (fat_uses_mmc()) {
 						if (CheckFirmware("/FIRMWARE.UPG"))
@@ -905,10 +869,12 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 							FirmwareUpdateError();
 					}
 					break;
-#ifdef ZXUNO
-				case 10:
-          DialogBox("\n     Display MiSTLita menu\n         on startup?", MENU_DIALOG_YESNO, StartupSequenceSet);
+#else
+				case 9: {
+          extern void SetupPlatformMenu();
+          SetupPlatformMenu();
 					break;
+        }
 #endif
 				case 13:
 #ifdef XILINX

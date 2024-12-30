@@ -27,8 +27,10 @@ static uint64_t status;
 uint8_t joymenu_select = 6;
 uint8_t joymenu_start = 7;
 
+#if 0
 #ifdef ZXUNO
 static uint8_t boot_menu = 1;
+#endif
 #endif
 
 // core ini sections
@@ -39,8 +41,10 @@ const ini_section_t core_ini_sections[] = {
 // core ini vars
 const ini_var_t core_ini_global_vars[] = {
 	{"JOYSTICK_REMAP", (void*)virtual_joystick_remap, CUSTOM_HANDLER, 0, 0, 1}
+#if 0
 #ifdef ZXUNO
   ,{"BOOT_MENU", (void*)(&(boot_menu)), UINT8, 0, 1, 1}
+#endif
 #endif
 };
 
@@ -97,6 +101,7 @@ unsigned char settings_save(char global)
 	return 1;
 }
 
+#if 0
 #ifdef ZXUNO
 // core ini vars
 const ini_var_t board_ini_vars[] = {
@@ -133,4 +138,5 @@ uint8_t settings_boot_menu() {
 void settings_set_boot(uint8_t state) {
   boot_menu = state;
 }
+#endif
 #endif

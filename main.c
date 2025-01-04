@@ -42,6 +42,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "errors.h"
 #include "hardware.h"
 #include "mmc.h"
+#include "settings.h"
 #include "fat_compat.h"
 #include "osd.h"
 #include "fpga.h"
@@ -215,7 +216,7 @@ int main(void)
     } else {
         user_io_set_core_mod(mod);
         strncpy(s, arc_get_rbfname(), sizeof(s)-5);
-        strcat(s,".");
+        strcat(s,"." COREEXT);
         fpga_init(s);
     }
 

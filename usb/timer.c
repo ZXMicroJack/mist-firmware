@@ -15,7 +15,6 @@ msec_t timer_get_msec() {
 
 bool timer_check(msec_t ref, msec_t delay) {
   msec_t now = GetRTTC();
-//   printf("timer_check: %d %d %d\n", now, ref, delay);
   return ((now-ref) >= delay);
 }
 

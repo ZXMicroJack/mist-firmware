@@ -181,7 +181,7 @@ char user_io_create_config_name(char *s, const char *ext, char flags) {
 	if (flags & CONFIG_VHD) p = arc_get_vhdname();
 	if (!p || !*p) p = user_io_get_core_name();
 	if(p[0]) {
-		if (flags & CONFIG_ROOT) strcpy(s,MIST_ROOT "/"); else s[0] = 0;
+		if (flags & CONFIG_ROOT) strcpy(s,MIST_ROOT); else s[0] = 0;
 		strcat(s, p);
 		if (ext) {
 			strcat(s,".");
@@ -525,7 +525,7 @@ void user_io_joystick(unsigned char joystick, unsigned char map) {
 }
 
 void user_io_joystick16(unsigned char joystick, unsigned short map) {
-  // digital joysticks also send analog signals
+	// digital joysticks also send analog signals
 	user_io_digital_joystick(joystick, map);
 	user_io_digital_joystick_ext(joystick, map);
 	user_io_analog_joystick(joystick, 
@@ -1272,7 +1272,6 @@ void user_io_poll() {
 		StateJoySet(joy_map, mist_cfg.joystick_db9_fixed_index ? idx : joystick_count()); // send to OSD
 		virtual_joystick_keyboard_idx(idx, joy_map);
 	}
-  
 	if(GetDB9(1, &joy_map)) {
 		joy_map = virtual_joystick_mapping(0x00db, 0x0001, joy_map);
 		uint8_t idx = user_io_joystick_renumber(1);

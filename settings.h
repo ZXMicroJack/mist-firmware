@@ -18,12 +18,18 @@
 unsigned char settings_load(char global);
 unsigned char settings_save(char global);
 
-#ifdef ZXUNO
-void settings_board_load();
-void settings_board_save();
-uint8_t settings_boot_menu();
-void settings_set_boot(uint8_t state);
-#endif
-
 extern uint8_t joymenu_select;
 extern uint8_t joymenu_start;
+
+#ifndef COREEXTOTHER
+#define COREEXTOTHER
+#endif
+
+#ifndef MIST_ROOT
+#define MIST_ROOT "/"
+#endif
+
+#ifndef COREEXT
+#define COREEXT "RBF"
+#endif
+

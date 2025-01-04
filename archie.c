@@ -3,6 +3,7 @@
 #include "hardware.h"
 
 #include "menu.h"
+#include "settings.h"
 #include "osd.h"
 #include "archie.h"
 #include "hdd.h"

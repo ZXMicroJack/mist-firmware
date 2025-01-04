@@ -865,8 +865,9 @@ static void usb_process_iface (usb_device_t *dev,
 					handle_5200daptor(dev, iface, buf);
 				
 				// apply keyboard mappings
-        virtual_joystick_keyboard_idx( idx, vjoy );
-#if 0
+#ifdef CONTROL_MENU_USING_ANY_JOYPAD
+				virtual_joystick_keyboard_idx( idx, vjoy );
+#else
 				if ((!virt_joy_kbd_iface) || (virt_joy_kbd_iface == iface)) {
 					bool ret = virtual_joystick_keyboard_idx( idx, vjoy );
 					virt_joy_kbd_iface = NULL;
@@ -890,6 +891,7 @@ static uint8_t usb_hid_poll(usb_device_t *dev) {
 	for(i=0;i<info->bNumIfaces;i++) {
 		usb_hid_iface_info_t *iface = info->iface+i;
 		if(iface->device_type != HID_DEVICE_UNKNOWN) {
+
 			if (timer_check(iface->qLastPollTime, iface->interval)) { // poll at requested rate
 			//      hid_debugf("poll %d...", iface->ep.epAddr);
 				uint16_t read = iface->ep.maxPktSize;
@@ -946,12 +948,6 @@ int8_t hid_keyboard_present(void) {
 		}
 	}
 	return 0;
-}
-
-void usb_hid_process(usb_device_t *dev, int inst, uint8_t *buf, uint16_t read) {
-  usb_hid_info_t *info = &(dev->hid_info);
-  usb_hid_iface_info_t *iface = info->iface+inst;
-  usb_process_iface (dev, iface, read, buf);
 }
 
 const usb_device_class_config_t usb_hid_class = {

@@ -67,6 +67,7 @@ uint8_t joystick_release(uint8_t c_jindex) {
 				}
 			}
 		}
+// RP2040 has its own XInput driver
 #ifndef EXCL_XBOX_JPAD
 		if(dev[j].bAddress && (dev[j].class == &usb_xbox_class)) {
 			uint8_t jindex = joystick_index(dev[j].xbox_info.jindex);

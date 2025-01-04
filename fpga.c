@@ -934,7 +934,6 @@ void fpga_init(const char *name) {
   // wait max 100 msec for a valid core type
   time = GetTimer(100);
   do {
-	  printf("ct%02X\n", ct);
     EnableIO();
     ct = SPI(0xff);
     DisableIO();
@@ -945,9 +944,11 @@ void fpga_init(const char *name) {
 
   user_io_detect_core_type();
 
+#ifdef LEGACY_CORE_SUPPORT
   // for legacy cores - leave the SD card alone
   if (user_io_core_type() == CORE_TYPE_UNKNOWN)
     return;
+#endif
 
   user_io_init_core();
   mist_ini_parse();

@@ -110,7 +110,9 @@ void StateUsbJoySet(uint8_t usbjoy, uint8_t usbextra, uint8_t joy_num) {
 	if (joy_num > 5) return;
 	mist_joysticks[joy_num].usb_state = usbjoy;
 	mist_joysticks[joy_num].usb_state_extra = usbextra;
-  DB9Update(joy_num, usbjoy);
+#ifdef UPDATE_DB9
+	DB9Update(joy_num, usbjoy);
+#endif
 }
 
 uint8_t StateUsbJoyGet(uint8_t joy_num) {

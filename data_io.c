@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "settings.h"
 #include "user_io.h"
 #include "data_io.h"
 #include "debug.h"
@@ -255,9 +256,5 @@ void data_io_rom_upload(char *rname, char mode) {
     iprintf("Error opening file %s (%d)!\n", fname, res);
 
   ChangeDirectoryName(MIST_ROOT);
-#ifdef XILINX
-  ScanDirectory(SCAN_INIT, "BIT",  SCAN_LFN | SCAN_SYSDIR);
-#else
-  ScanDirectory(SCAN_INIT, "RBF",  SCAN_LFN | SCAN_SYSDIR);
-#endif
+  ScanDirectory(SCAN_INIT, COREEXT,  SCAN_LFN | SCAN_SYSDIR);
 }

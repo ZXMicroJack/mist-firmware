@@ -306,12 +306,9 @@ static char FirmwareUpdateError() {
 	return 0;
 }
 
-
 static char FirmwareUpdatingDialog(uint8_t idx) {
 	WriteFirmware("/FIRMWARE.UPG");
-#ifndef RP2040
 	Error = ERROR_UPDATE_FAILED;
-#endif
 	FirmwareUpdateError();
 	return 0;
 }
@@ -368,7 +365,7 @@ static char CoreFileSelected(uint8_t idx, const char *SelectedName) {
 			return 0;
 		}
 		strcpy(s, arc_get_rbfname());
-  	strcat(s, "."COREEXT);
+		strcat(s, "."COREEXT);
 		rbfname = (char*) &s;
 	}
 	user_io_reset();
@@ -555,36 +552,36 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					item->active = 0;
 					}
 					break;
- 				case 9:
+				case 9:
 					item->item = "           Update";
 					item->active = fat_uses_mmc();
 					item->stipple = !item->active;
 					break;
 #else
 				case 7: {
-          extern const char firmwareVersion[];
+					extern const char firmwareVersion[];
 					siprintf(s, "   FIRM s/w ver. %s", firmwareVersion);
 					item->item = s;
 					item->active = 0;
 					break;
-        }
+			        }
 				case 8: {
-          extern const char *GetUSBVersion();
-          char *v = GetUSBVersion();
-          if (v) {
-            siprintf(s, "   USB  s/w ver. %s", v);
-            item->item = s;
-          } else {
-            s[0] = 0;
-          }
-          
+					extern const char *GetUSBVersion();
+					char *v = GetUSBVersion();
+					if (v) {
+						siprintf(s, "   USB  s/w ver. %s", v);
+						item->item = s;
+					} else {
+						s[0] = 0;
+					}
+
 					item->item = s;
 					item->active = 0;
-          break;
-        }
- 				case 9:
-          item->item = "      Platform settings";
-          item->active = 1;       
+					break;
+				}
+				case 9:
+					item->item = "      Platform settings";
+					item->active = 1;       
 					break;
 #endif
 				case 11:
@@ -871,17 +868,13 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					break;
 #else
 				case 9: {
-          extern void SetupPlatformMenu();
-          SetupPlatformMenu();
+					extern void SetupPlatformMenu();
+					SetupPlatformMenu();
 					break;
-        }
+				}
 #endif
 				case 13:
-#ifdef XILINX
-					SelectFileNG(COREEXT"ARC"COREEXTOTHER, SCAN_LFN, CoreFileSelected, 0);
-#else
 					SelectFileNG(COREEXT"ARC"COREEXTOTHER, SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
-#endif
 					break;
 				case 21:
 				case 22:
@@ -1232,11 +1225,7 @@ void HandleUI(void)
 					}
 					// the "menu" core is special in jumps directly to the core selection menu
 					if(!strcmp(user_io_get_core_name(), "MENU") || (user_io_get_core_features() & FEAT_MENU)) {
-#ifdef XILINX
-						SelectFileNG(COREEXT"ARC"COREEXTOTHER, SCAN_LFN, CoreFileSelected, 0);
-#else
 						SelectFileNG(COREEXT"ARC"COREEXTOTHER, SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
-#endif
 					}
 				}
 

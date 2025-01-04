@@ -67,7 +67,7 @@ register char * stack_ptr asm ("sp");
 
 /* following is copied from libc/stdio/local.h to check std streams */
 extern void   __sinit (struct _reent *);
-#if 0
+#ifndef RP2040
 #define CHECK_INIT(ptr) \
   do						\
     {						\

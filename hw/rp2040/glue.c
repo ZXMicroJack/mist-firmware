@@ -8,14 +8,13 @@
 #include "errors.h"
 #include "usb/usb.h"
 #include "version.h"
-#include "drivers/fifo.h"
-#include "drivers/pins.h"
-#include "drivers/ipc.h"
-#include "drivers/crc16.h"
+#include "fifo.h"
+#include "pins.h"
+#include "crc16.h"
 #include "FatFs/ff.h"
 
 //#define DEBUG
-#include "drivers/debug.h"
+#include "rpdebug.h"
 
 #include "pico/bootrom.h"
 #include "pico/time.h"

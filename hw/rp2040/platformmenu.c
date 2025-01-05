@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 #include "ini_parser.h"
-#include "picosynth.h"
+// #include "picosynth.h"
 #include "menu.h"
 #include "osd.h"
 #include "errors.h"

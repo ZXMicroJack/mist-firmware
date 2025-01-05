@@ -2,12 +2,12 @@
 #include <stdbool.h>
 
 #include "host/usbh.h"
-#include "xinput_host.h"
+#include "tusb_xinput/xinput_host.h"
 #include "host/usbh_classdriver.h"
 #include "usbhost.h"
 
 //#define DEBUG
-#include "../drivers/debug.h"
+#include "rpdebug.h"
 
 #define XBOX_VID                                0x045E // Microsoft Corporation
 #define XBOX_WIRED_PID                          0x028E // Microsoft 360 Wired controller

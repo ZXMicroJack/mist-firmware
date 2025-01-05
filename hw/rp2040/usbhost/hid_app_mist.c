@@ -27,9 +27,9 @@
 #include "tusb.h"
 // #define DEBUG
 #ifdef MIST_USB
-#include "drivers/debug.h"
+#include "rpdebug.h"
 #else
-#include "debug.h"
+#include "rpdebug.h"
 #endif
 #include "usbhost.h"
 

@@ -34,13 +34,13 @@
 #include "user_io.h"
 
 //#define DEBUG
-#include "drivers/debug.h"
+#include "debug.h"
 
 
 // #include "host/usbh.h"
 
 #include "host/usbh.h"
-#include "xinput_host.h"
+#include "tusb_xinput/xinput_host.h"
 // #include "/pico/pico-sdk/lib/tinyusb/src/host/usbh_classdriver.h"
 #include "host/usbh_classdriver.h"
 

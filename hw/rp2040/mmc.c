@@ -40,10 +40,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mmc.h"
 
-#include "drivers/pio_spi.h"
-#include "drivers/sdcard.h"
+#include "pio_spi.h"
+#include "sdcard.h"
 // #define DEBUG
-#include "drivers/debug.h"
+#include "rpdebug.h"
 
 
 static pio_spi_inst_t *spi = NULL;

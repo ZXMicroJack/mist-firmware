@@ -7,17 +7,16 @@
 #include "ikbd.h"
 #include "usb.h"
 
-#include "drivers/jamma.h"
 #include <pico/time.h>
 #include "hardware/gpio.h"
 #include "usb/joymapping.h"
 #include "mist_cfg.h"
 
 // #define DEBUG
-#include "drivers/debug.h"
+#include "debug.h"
 // #include "usbrtc.h"
 
-#include "common.h"
+// #include "common.h"
 
 uint32_t systimer;
 
@@ -312,65 +311,13 @@ void JammaToDB9() {
 #endif
 
 char GetDB9(char index, unsigned char *joy_map) {
-  // *joy_map is set to a combination of the following bitmapped values
-  // JOY_UP, JOY_DOWN, JOY_LEFT, JOY_RIGHT, JOY_BTN1, JOY_BTN2
-
-  uint32_t d = jamma_GetData(index);
-  uint32_t mask = 0x80;
-  uint8_t ndx = 0;
-  uint16_t j = 0;
-
-  if (d != 0xff) { // joystick is properly set up
-    while (mask) {
-      if (d & mask) j |= joylut[ndx];
-      ndx++;
-      mask >>= 1;
-    }
-  }
-
-#ifdef JAMMA_JAMMA
-  d = ~jamma_GetJamma();
-  uint8_t depth = jamma_GetDepth();
-  for (ndx = 0; ndx < depth; ndx++) {
-    j |= (d & 1) ? jammalut[index][ndx] : 0;
-    d >>= 1;
-  }
-#endif
-  
-#ifndef JAMMA_JAMMA
-#ifdef DEBUG
-  static uint16_t lastdb9[2];
-  if (lastdb9[index] != j) {
-    debug(("GetDB9: index %d joy %04x\n", index, j));
-    lastdb9[index] = j;
-  }
-#endif
-
-  *joy_map = d == 0xff ? 0 : j;
+  *joy_map = 0;
   return 1;
-#else
-  uint16_t joy_map2;
-
-  joy_map2 = virtual_joystick_mapping(0x00db, index, j);
-
-  uint8_t idx = mist_cfg.joystick_db9_fixed_index ? user_io_joystick_renumber(index) : joystick_count() + index;
-  if (!user_io_osd_is_visible()) user_io_joystick(idx, joy_map2);
-  StateJoySet(joy_map2, idx); // send to OSD
-  StateJoySetExtra( joy_map2>>8, idx);
-  virtual_joystick_keyboard_idx(idx, joy_map2);
-#ifdef DEBUG
-  static uint16_t lastdb9[2];
-  if (lastdb9[index] != j) {
-    printf("GetDB9: index %d (->%d) joy %04x map %04x\n", index, idx, j, joy_map2);
-    lastdb9[index] = j;
-  }
-#endif
-  return 0;
-#endif
 }
 
-const static uint8_t inv_joylut[] = {DB9_BTN4, DB9_BTN3, DB9_BTN2, DB9_BTN1, DB9_UP, DB9_DOWN, DB9_LEFT, DB9_RIGHT};
+//const static uint8_t inv_joylut[] = {DB9_BTN4, DB9_BTN3, DB9_BTN2, DB9_BTN1, DB9_UP, DB9_DOWN, DB9_LEFT, DB9_RIGHT};
 void DB9Update(uint8_t joy_num, uint8_t usbjoy) {
+#if 0
   uint8_t mask = 0x80;
   uint8_t ndx = 0;
   uint8_t joydata = 0;
@@ -386,6 +333,7 @@ void DB9Update(uint8_t joy_num, uint8_t usbjoy) {
   jamma_SetData(joy_num & 1, joydata | jammadb9[joy_num&1]);
 #else
   jamma_SetData(joy_num & 1, joydata);
+#endif
 #endif
 }
 

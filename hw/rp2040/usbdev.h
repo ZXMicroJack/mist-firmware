@@ -20,15 +20,15 @@
 
 #include <inttypes.h>
 #include "usb.h"
-#include "at91sam_usb.h"
+// #include "at91sam_usb.h"
 
 extern const usb_device_class_config_t usb_kbd_class;
 
 void usb_ToPS2Mouse(uint8_t report[], uint16_t len);
 void usb_ToPS2(uint8_t modifier, uint8_t keys[6]);
 
-#define BULK_IN_SIZE  AT91C_EP_IN_SIZE
-#define BULK_OUT_SIZE AT91C_EP_OUT_SIZE
+#define BULK_IN_SIZE  0x40
+#define BULK_OUT_SIZE 0x40
 
 void usb_dev_open(void);
 void usb_dev_reconnect(void);

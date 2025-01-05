@@ -18,17 +18,13 @@
 #include "hardware/pio.h"
 #include "hardware/watchdog.h"
 
-#include "drivers/fpga.h"
-#include "drivers/flash.h"
-#include "drivers/pio_spi.h"
-#include "drivers/sdcard.h"
-#include "drivers/ps2.h"
-#include "drivers/fifo.h"
-#include "drivers/ipc.h"
-#include "drivers/kbd.h"
-#include "drivers/cookie.h"
+#include "fpga.h"
+#include "pio_spi.h"
+#include "sdcard.h"
+#include "fifo.h"
+// #include "kbd.h"
 // #define DEBUG
-#include "drivers/debug.h"
+#include "debug.h"
 
 #include "mistmain.h"
 
@@ -37,7 +33,7 @@
 #include "wtsynth.h"
 #endif
 
-#include "drivers/pins.h"
+#include "pins.h"
 
 // #include "usbdev.h"
 

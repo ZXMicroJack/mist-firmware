@@ -16,9 +16,8 @@
 #include "pins.h"
 #include "fpga.h"
 #include "bitfile.h"
-#include "jamma.h"
 // #define DEBUG
-#include "debug.h"
+#include "rpdebug.h"
 
 #include "fpga.pio.h"
 
@@ -259,16 +258,6 @@ int fpga_configure(void *user_data, uint8_t (*next_block)(void *, uint8_t *), ui
   len = assumelength;
 #endif
   
-  // probably this should not be here, this makes some space in PIO memory to
-  // load the FPGA routines.
-#ifndef MB2
-  uint8_t old_jamma_mode = jamma_GetMisterMode();
-  jamma_Kill();
-  pio_add_program_at_offset(fpga_pio, &fpga_program, FPGA_OFFSET);
-  fpga_program_init(fpga_pio, fpga_sm, FPGA_OFFSET, 0);
-  pio_sm_clear_fifos(fpga_pio, fpga_sm);
-#endif
-
   debug(("fpga_status: done %u nstatus %u\n", gpio_get(GPIO_FPGA_CONF_DONE), gpio_get(GPIO_FPGA_NSTATUS)));
   fpga_program_enable(fpga_pio, fpga_sm, 0, true);
 
@@ -330,11 +319,7 @@ int fpga_configure(void *user_data, uint8_t (*next_block)(void *, uint8_t *), ui
 
   pio_sm_set_enabled(fpga_pio, fpga_sm, false);
   fpga_program_enable(fpga_pio, fpga_sm, 0, false);
-
-#ifndef MB2
   pio_remove_program(fpga_pio, &fpga_program, FPGA_OFFSET);
-  jamma_InitEx(old_jamma_mode);
-#endif
 
 #ifdef ALTERA_FPGA
   debug(("fpga_configure: crc %08X %d\n", crc, gpio_get(GPIO_FPGA_CONF_DONE)));

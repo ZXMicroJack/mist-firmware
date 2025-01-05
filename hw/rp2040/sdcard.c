@@ -20,7 +20,7 @@
 
 #include "pins.h"
 // #define DEBUG
-#include "debug.h"
+#include "rpdebug.h"
 
 static int is_sdhc = 0;
 
@@ -52,8 +52,8 @@ static void pio_spi_read8_blocking_align(const pio_spi_inst_t *spi, uint8_t *dst
   }
 
 #ifdef DEBUG
-  printf("raw read\n");
-  hexdump(dst, len);
+  // printf("raw read\n");
+  // hexdump(dst, len);
 #endif
 }
 
@@ -118,11 +118,11 @@ static uint8_t sd_cmd(pio_spi_inst_t *spi, uint8_t cmd[], int cmdlen, uint8_t bu
     gpio_put(spi->cs_pin, 1);
   }
 
-#ifdef DEBUG
-  hexdump(cmd, cmdlen);
-  printf(" - ");
-  hexdump(buf, buflen);
-#endif
+// #ifdef DEBUG
+//   hexdump(cmd, cmdlen);
+//   printf(" - ");
+//   hexdump(buf, buflen);
+// #endif
   return buf[0];
 }
 
@@ -237,7 +237,7 @@ uint8_t sd_writesector(pio_spi_inst_t *spi, uint32_t lba, uint8_t *data) {
   uint8_t crc[] = {0xff, 0xff, 0xff};
   uint8_t buf[1];
 
-  hexdump(data, 512);
+  // hexdump(data, 512);
 
   if (!is_sdhc) lba <<= 9;
 
@@ -326,7 +326,7 @@ static uint8_t sd_readsector_ll(pio_spi_inst_t *spi, uint32_t lba, uint8_t *sect
 #ifndef SD_NO_CRC
   if (sector != NULL && crc16iv(sector, 512, 0) != crcw) {
     debug(("Read failed crc 3 [%02X %02X] != %04X\n", crc[0], crc[1], crc16iv(sector, 512, 0)));
-    hexdump(sector, 512);
+    // hexdump(sector, 512);
     return 1;
   }
 #endif

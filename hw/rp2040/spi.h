@@ -1,9 +1,7 @@
 #ifndef SPI_H
 #define SPI_H
 
-//#include "AT91SAM7S256.h"
 #include <inttypes.h>
-
 #include "hardware.h"
 #include "attrs.h"
 

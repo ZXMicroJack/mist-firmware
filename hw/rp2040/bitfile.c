@@ -3,7 +3,7 @@
 #include <string.h>
 #include "bitfile.h"
 //#define DEBUG
-#include "debug.h"
+#include "rpdebug.h"
 
 #define BLOCKSIZE 512
 

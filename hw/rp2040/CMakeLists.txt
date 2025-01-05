@@ -27,7 +27,7 @@ set_target_properties(picosynth PROPERTIES IMPORTED_LOCATION ../picosynth/libpic
 include(example_auto_set_url.cmake)
 
 # Build project
-include_directories(. ../mist-firmware ../mist-firmware/usb .. ../contrib/tusb_xinput)
+include_directories(. ../.. ../../usb .. ../tusb_xinput)
 
 set(driver_src
   fpga.c
@@ -35,6 +35,8 @@ set(driver_src
   sdcard.c
   bitfile.c
   fifo.c
+  crc16.c
+  ps2.c
 )
 
 set(main_src
@@ -47,18 +49,18 @@ set(main_src
   mmc.c
   keyboard.c
   fpgaconfig.c
-  mbconfig.c
   kbdusb.c
   platformmenu.c
+  rtc.c
 )
 
 set(usb_src
-  hid_app_mist.c
-  msc_app.c
-  xinput.c
+./usbhost/hid_app_mist.c
+  ./usbhost/msc_app.c
+  ./usbhost/xinput.c
   ./tusb_xinput/xinput_host.c
-  xboxusb.c
-  ds3usb.c
+  ./usbhost/xboxusb.c
+  ./usbhost/ds3usb.c
 )
 
 set(mistfirmware_src
@@ -90,6 +92,7 @@ set(mistfirmware_src
   ../../user_io.c
   ../../utils.c
   ../../xmodem.c
+  ../../osd.c
   ../../FatFs/diskio.c
   ../../FatFs/ff.c
   ../../FatFs/ffsystem.c
@@ -214,8 +217,10 @@ target_link_libraries(mistram
   hardware_rtc 
   pico_multicore)
 add_compile_options(-O2)
-pico_generate_pio_header(mistram ../drivers/fpga.pio)
-pico_generate_pio_header(mistram ../drivers/spi.pio)
+pico_generate_pio_header(mistram fpga.pio)
+pico_generate_pio_header(mistram spi.pio)
+pico_generate_pio_header(mistram ps2.pio)
+pico_generate_pio_header(mistram ps2tx.pio)
 pico_enable_stdio_usb(mistram 1)
 pico_enable_stdio_uart(mistram 0)
 pico_add_extra_outputs(mistram)
@@ -251,8 +256,10 @@ target_link_libraries(mist
   pico_multicore)
 
 add_compile_options(-O2)
-pico_generate_pio_header(mist ../drivers/fpga.pio)
-pico_generate_pio_header(mist ../drivers/spi.pio)
+pico_generate_pio_header(mist fpga.pio)
+pico_generate_pio_header(mist spi.pio)
+pico_generate_pio_header(mist ps2.pio)
+pico_generate_pio_header(mist ps2tx.pio)
 pico_enable_stdio_usb(mist 1)
 pico_enable_stdio_uart(mist 0)
 pico_add_extra_outputs(mist)
@@ -283,14 +290,18 @@ target_link_libraries(mistusb
   hardware_spi 
   hardware_pio 
   hardware_flash 
+  hardware_rtc 
   hardware_i2c 
   pico_multicore 
   tinyusb_host 
   tinyusb_board)
+
 target_include_directories(mistusb PUBLIC ./usbhost)
 add_compile_options(-O2)
-pico_generate_pio_header(mistusb ../drivers/fpga.pio)
-pico_generate_pio_header(mistusb ../drivers/spi.pio)
+pico_generate_pio_header(mistusb fpga.pio)
+pico_generate_pio_header(mistusb spi.pio)
+pico_generate_pio_header(mistusb ps2.pio)
+pico_generate_pio_header(mistusb ps2tx.pio)
 pico_enable_stdio_usb(mistusb 0)
 pico_enable_stdio_uart(mistusb 0)
 pico_add_extra_outputs(mistusb)

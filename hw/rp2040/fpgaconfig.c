@@ -16,14 +16,14 @@
 #include "tos.h"
 #include "mist_cfg.h"
 #include "settings.h"
-#include "rtc.h"
-#include "common.h"
+// #include "rtc.h"
+// #include "common.h"
 #include "usb/joymapping.h"
 
-#include "drivers/fpga.h"
-#include "drivers/bitfile.h"
+#include "fpga.h"
+#include "bitfile.h"
 //#define DEBUG
-#include "drivers/debug.h"
+#include "rpdebug.h"
 
 // NB: These for production
 #ifndef PICO_NO_FLASH
@@ -156,8 +156,6 @@ unsigned char ConfigureFpga(const char *bitfile) {
 
   debug(("ConfigureFpgaEx: %s\n", bitfile ? bitfile : "null"));
 
-  inhibit_reset = 1;
-
   /* handle JTAGMODE - sleep for 60s and poll for recognisable core, 
      otherwise, reset back to core menu. */
   if (bitfile && !strncmp(bitfile, "JTAGMODE.", 9)) {
@@ -177,7 +175,6 @@ unsigned char ConfigureFpga(const char *bitfile) {
     // If core was detected, then return SUCCESS, otherwise
     // load the default core.
     if (n>0) {
-      inhibit_reset = 0;
       return 1;
     } else {
       bitfile = NULL;
@@ -190,7 +187,6 @@ unsigned char ConfigureFpga(const char *bitfile) {
     fpga_initialise();
     fpga_claim(false);
     fpga_reset();
-    inhibit_reset = 0;
     return 1;
   }
 #endif
@@ -207,7 +203,6 @@ unsigned char ConfigureFpga(const char *bitfile) {
 #ifdef BOOT_FLASH_ON_ERROR
     printf("!!! booting from flash!!!\n");
     BootFromFlash();
-    inhibit_reset = 0;
     return 1;
 #else
     FatalError(4);
@@ -249,7 +244,6 @@ unsigned char ConfigureFpga(const char *bitfile) {
       debug(("Failed: FPGA reset returns %d\n", r));
       f_close(&cf->file);
       free(cf);
-      inhibit_reset = 0;
       return 0;
     }
 
@@ -264,7 +258,6 @@ unsigned char ConfigureFpga(const char *bitfile) {
   free(cf);
 
   // returns 1 if success / 0 on fail
-  inhibit_reset = 0;
   return result;
 }
 

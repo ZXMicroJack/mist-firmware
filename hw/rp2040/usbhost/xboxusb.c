@@ -34,10 +34,10 @@
 #include "user_io.h"
 
 //#define DEBUG
-#include "drivers/debug.h"
+#include "rpdebug.h"
 
 #include "host/usbh.h"
-#include "xinput_host.h"
+#include "tusb_xinput/xinput_host.h"
 #include "host/usbh_classdriver.h"
 
 static const uint16_t xinput_lut[] = {

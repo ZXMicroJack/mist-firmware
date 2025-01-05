@@ -42,7 +42,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "pico/time.h"
 #include "hardware/watchdog.h"
-#include "drivers/cookie.h"
+// #include "drivers/cookie.h"
 
 #include "errors.h"
 #include "hardware.h"
@@ -68,26 +68,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "mistmain.h"
 #include "settings.h"
 
-#include "drivers/fifo.h"
-#include "drivers/ipc.h"
-#include "drivers/midi.h"
-#include "drivers/pins.h"
-#include "drivers/jamma.h"
-#include "drivers/fpga.h"
-#include "drivers/gpioirq.h"
+#include "fifo.h"
+#include "pins.h"
+#include "fpga.h"
 // #define DEBUG
-#include "drivers/debug.h"
+#include "rpdebug.h"
 
 #include "hardware/gpio.h"
 
-#ifdef PICOSYNTH
-#include "wtsynth.h"
-#include "picosynth.h"
-#endif
-#include "rtc.h"
+// #include "rtc.h"
 
-#include "mbconfig.h"
-#include "common.h"
+// #include "mbconfig.h"
+// #include "common.h"
 
 
 #ifndef _WANT_IO_LONG_LONG
@@ -119,22 +111,14 @@ void HandleFpga(void) {
   UpdateDriveStatus();
 }
 
-extern void inserttestfloppy();
+// extern void inserttestfloppy();
 
-uint8_t legacy_mode = DEFAULT_MODE;
+uint8_t legacy_mode = 0;
 
 void set_legacy_mode(uint8_t mode) {
   if (mode != legacy_mode) {
     debug(("Setting legacy mode to %d\n", mode));
-    DB9SetLegacy(mode == LEGACY_MODE);
-#ifndef ZXUNO
-#ifdef MB2
-    ipc_Command(IPC_SETMISTER, &mode, sizeof mode);
-#else
-    jamma_Kill();
-    jamma_InitEx(mode == MIST_MODE);
-#endif
-#endif
+    DB9SetLegacy(mode);
   }
   legacy_mode = mode;
 }
@@ -178,20 +162,6 @@ unsigned int usb_host_storage_capacity() {
 }
 #endif
 
-uint8_t inhibit_reset = 0;
-#if !defined(ZXUNO) && !defined(XILINX)
-static void gpio_callback(uint gpio, uint32_t events) {
-  if (gpio == GPIO_RESET_FPGA && !inhibit_reset) {
-#ifdef MB2
-    extern uint8_t stop_watchdog;
-    stop_watchdog = 1;
-#else
-    watchdog_enable(1, 1);
-#endif
-  }
-}
-#endif
-
 int mist_init() {
     uint8_t mmc_ok = 0;
 
@@ -202,22 +172,6 @@ int mist_init() {
     ps2_AttemptDetect(GPIO_PS2_CLK, GPIO_PS2_DATA);
 #endif
 
-#if !defined(ZXUNO) && !defined(XILINX)
-    /* monitor RESET switch */
-    gpioirq_Init();
-    gpioirq_SetCallback(IRQ_RESET, gpio_callback);
-
-    gpio_init(GPIO_RESET_FPGA);
-    gpio_set_dir(GPIO_RESET_FPGA, GPIO_IN);
-
-#ifndef XILINX /* don't have to wait for reset to come back up for xilinx. */
-    while (!gpio_get(GPIO_RESET_FPGA))
-      tight_loop_contents();
-#endif
-
-    inhibit_reset = 1;
-    gpio_set_irq_enabled(GPIO_RESET_FPGA, GPIO_IRQ_EDGE_FALL, true);
-#endif
     // Timer_Init();
     USART_Init(115200);
 
@@ -226,20 +180,15 @@ int mist_init() {
     iprintf("Version %s\r\r", version+5);
 
     mist_spi_init();
+#ifdef RTC
     rtc_Init();
+#endif
 
-#ifdef ZXUNO
-  {
-    void ConfigureFPGAFlash();
-    ConfigureFPGAFlash();
-  }
-#else
-#ifdef XILINX
-    fpga_initialise();
-    fpga_claim(true);
-    fpga_reset(0);
-#endif
-#endif
+// #ifdef XILINX
+//     fpga_initialise();
+//     fpga_claim(true);
+//     fpga_reset(0);
+// #endif
 
     if(MMC_Init()) mmc_ok = 1;
     else           spi_fast();
@@ -304,11 +253,6 @@ int mist_init() {
     disk_ioctl(fs.pdrv, GET_SECTOR_COUNT, &storage_size);
     storage_size >>= 11;
 
-#if defined(XILINX) && !defined(ZXUNO)
-    mb_ini_parse();
-    fpga_SetType(mb_cfg.fpga_type);
-#endif
-
 #ifdef ZXUNO
     DWORD prev_cdir = fs.cdir;
 #endif
@@ -350,235 +294,45 @@ int mist_init() {
     }
 
     usb_dev_open();
-
-#ifdef ZXUNO
-  DB9SetLegacy(0);
-#else
-#ifndef MB2
-    jamma_InitEx(1);
-#endif
-#endif
-
-#ifndef USBFAKE
-    midi_init();
-#endif
-
-#ifdef ZXUNO
-    settings_board_load();
-    settings_load(1);
-    if (!settings_boot_menu() || (prev_cdir == fs.cdir)) {
-      BootFromFlash();
-      user_io_detect_core_type();
-    }
-#endif
-
-    set_legacy_mode(user_io_core_type() == CORE_TYPE_UNKNOWN ? LEGACY_MODE : MIST_MODE);
-
-#ifdef PIODEBUG
-    debuginit();
-#endif
+    set_legacy_mode(user_io_core_type() == CORE_TYPE_UNKNOWN);
 
     return 0;
 }
 
 
-/* handle sysex control */
-#define MIDI_SYSEX_START 		0xF0
-#define MIDI_SYSEX_END	 		0xF7
-
-uint8_t sysex_chksum;
-uint8_t sysex_insysex = 0;
-#define MAX_SYSEX   (254)
-uint8_t sysex_buffer[MAX_SYSEX];
-
-#define CMD_ECHO            0x01
-#define CMD_STOPSYNTH       0x02
-#define CMD_STARTSYNTH      0x03
-#define CMD_BEEP            0x04
-#define CMD_BUFFERALLOC     0x05
-#define CMD_BUFFERFREE      0x06
-#define CMD_WRITEDATA       0x07
-#define CMD_CHECKCRC16      0x08
-#define CMD_VERIFYPROGRAM   0x09
-#define CMD_RESET           0x0A
-#define CMD_SETBAUDRATE     0x0B
-#define CMD_INITFPGA        0x0C
-#define CMD_INITFPGAFN      0x0D
-#define CMD_BOOTSTRAP       0x0E
-
-extern uint8_t stop_watchdog;
-
-#ifndef USBFAKE
-uint64_t lastBeep = 0;
-void beep(int n) {
-  uint64_t now = time_us_64();
-
-  if ((now - lastBeep) > 1000000) {
-    printf("beep: %02X\n", n);
-    lastBeep = now;
-  }
-}
-#else
-#define beep(n) while(0) ;
-#endif
-
-
-#if !defined(USBFAKE)
-void sysex_Process() {
-  switch(sysex_buffer[0]) {
-    case CMD_RESET: {
-#ifdef MB2
-      uint8_t data = 0x55;
-      ipc_Command(IPC_REBOOT, &data, sizeof data);
-      stop_watchdog = 1;
-#endif
-      watchdog_enable(1, 1);
-      for(;;);
-      break;
-    }
-
-    case CMD_INITFPGAFN: {
-      char fn[256];
-      int i = 0;
-      memset(fn, 0, sizeof fn);
-      for (i = 0; i < (sysex_insysex - 4); i++) {
-        fn[i] = sysex_buffer[i+1];
-      }
-      
-      debug(("fn = %s\n", fn));
-      // skip initial separator, reset before load
-      ResetFPGA();
-
-#ifdef ZXUNO
-      /* ZXUNO version has no direct access to SD card - need to reset to menu first  */
-      if (legacy_mode == LEGACY_MODE) {
-        void ConfigureFPGAFlash();
-        ConfigureFPGAFlash();
-      }
-#endif
-
-      fpga_init(fn);
-      break;
-    }
-    
-#ifdef MB2
-    case CMD_BOOTSTRAP: {
-      cookie_Set();
-      stop_watchdog = 1;
-      watchdog_enable(1, 1);
-      for(;;);
-    }
-#endif
-
-    default:
-      debug(("Unknown sysex cmd: %02X\n", sysex_buffer[0]));
-  }
-}
-
-void wtsynth_Sysex(uint8_t data) {
-//   printf("sysex: %02X\n", data);
-  if (sysex_insysex && data == MIDI_SYSEX_END) {
-    debug(("sysex: completed len = %d\n", sysex_insysex - 2));
-    if (sysex_chksum == 0x00) sysex_Process();
-#ifdef SDEBUG
-    else printf("Sysex message failed checksum\n");
-#endif
-    sysex_insysex = 0;
-  } else if (!sysex_insysex && data == MIDI_SYSEX_START) {
-    sysex_insysex = 1;
-    sysex_chksum = 0x47;
-  } else if (sysex_insysex == 1) {
-    // fairly sure a fairlight will never be connected to a zxuno
-    if (data == 0x14) {
-      sysex_insysex ++;
-    } else {
-      debug(("Sysex not for us!\n"));
-      sysex_insysex = 0xff;
-    }
-  } else if (sysex_insysex > 0 && sysex_insysex < (MAX_SYSEX+2)) {
-    sysex_buffer[sysex_insysex-2] = data;
-    sysex_chksum ^= data;
-    sysex_insysex ++;
-  }
-}
-
-
-
-void midi_loop() {
-  unsigned char uartbuff[16];
-  int thisread;
-
-  // read and process midi data
-  int readable = midi_isdata();
-  while (readable) {
-    thisread = readable > sizeof uartbuff ? sizeof uartbuff : readable;
-    readable -= thisread;
-    
-    thisread = midi_get(uartbuff, thisread);
-
-#if 1 // disabled for debug
-    debug(("MidiIn: "));
-    for (int i=0; i<thisread; i++) {
-      debug(("%02X %c", uartbuff[i], (uartbuff[i] >= ' ' && uartbuff[i] < 128) ? uartbuff[i] : '?'));
-    }
-    debug(("\n"));
-#endif
-#ifndef PICOSYNTH
-    for (int i=0; i<thisread; i++) {
-      wtsynth_Sysex(uartbuff[i]);
-    }
-#else
-    wtsynth_HandleMidiBlock(uartbuff, thisread);
-#endif
-  }
-}
-#endif
-
+#ifdef RTC
 static uint64_t lastRtcSync = 0;
 #define RTC_SYNC    1000000
+#endif
 
 int mist_loop() {
+#ifdef RTC
   uint64_t now = time_us_64();
   if (!lastRtcSync || now > (lastRtcSync + RTC_SYNC)) {
     lastRtcSync = now;
     rtc_AttemptSync();
   }
-
-  ps2_Poll();
-#ifndef USBFAKE
-  midi_loop();
 #endif
 
-#ifdef MB2
-  /* send messages buffered by core 2 processes */
-  mb2_SendMessages();
-#endif
+  // ps2_Poll();
 
-    cdc_control_poll();
-    storage_control_poll();
+  // cdc_control_poll();
+  storage_control_poll();
 #ifdef USB
-    usb_deferred_poll();
+  usb_deferred_poll();
 #endif
 
-    if (legacy_mode == LEGACY_MODE) {
+    if (legacy_mode) {
       if (user_io_core_type() != CORE_TYPE_UNKNOWN) {
         printf("setting legacy mode\n");
-        set_legacy_mode(MIST_MODE);
-        printf("finished legacy mode\n");
+        set_legacy_mode(0);
       }
-#ifdef JAMMA_JAMMA
-      JammaToDB9();
-#endif
     } else {
       user_io_poll();
 
       // MJ: check for legacy core and switch support on
       if (user_io_core_type() == CORE_TYPE_UNKNOWN) {
-        set_legacy_mode(LEGACY_MODE);
-      } else {
-#if defined(XILINX) && !defined(ZXUNO)
-        fpga_ConfirmType();
-#endif
+        set_legacy_mode(1);
       }
 
       // MIST (atari) core supports the same UI as Minimig

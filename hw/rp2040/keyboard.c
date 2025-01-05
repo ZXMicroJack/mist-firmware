@@ -10,12 +10,10 @@
 #include "xmodem.h"
 #include "ikbd.h"
 #include "usb.h"
-#include "common.h"
-#include "drivers/ps2.h"
-#include "drivers/fifo.h"
-#include "drivers/ipc.h"
+// #include "common.h"
+#include "fifo.h"
 // #define DEBUG
-#include "drivers/debug.h"
+#include "rpdebug.h"
 
 // remap modifiers to each other if requested
 //  bit  0     1      2    3    4     5      6    7
@@ -335,7 +333,8 @@ static int isExtended(uint8_t data) {
      data >= 0x81);
 }
 
-static uint8_t curr_legacy_mode = DEFAULT_MODE;
+static uint8_t curr_legacy_mode = 0;
+static uint8_t legacy_mode = 0;
 
 static int mousex = 0, mousey = 0, mouseb = 0;
 static int mouseindex = -1;
@@ -345,7 +344,7 @@ void usb_ToPS2(uint8_t modifier, uint8_t keys[6]) {
   debug(("usb_ToPS2: modifier %02X keys %02X %02X %02X %02X %02X %02X legacy %d\n",
     modifier, keys[0], keys[1], keys[2], keys[3], keys[4], keys[5], curr_legacy_mode));
 
-  if (curr_legacy_mode != LEGACY_MODE) return;
+  if (!curr_legacy_mode) return;
 
   static int firsttime = 1;
   uint32_t newpressed[8] = {0,0,0,0,0,0,0,0};
@@ -423,7 +422,7 @@ void usb_ToPS2(uint8_t modifier, uint8_t keys[6]) {
 }
 
 void usb_ToPS2Mouse(uint8_t report[], uint16_t len) {
-  if (curr_legacy_mode != LEGACY_MODE) return;
+  if (!curr_legacy_mode) return;
   
   if (len >= 3) {
       uint8_t ps2[4];
@@ -459,8 +458,8 @@ void ps2_Poll() {
     firsttime = 0;
   }
 
-  if (curr_legacy_mode != legacy_mode) {
-    if (legacy_mode == LEGACY_MODE) {
+  if (!curr_legacy_mode) {
+    if (legacy_mode) {
       ps2_EnablePortEx(0, false, 1);
       ps2_EnablePortEx(0, true, 0);
       ps2_EnablePortEx(1, false, 1);
@@ -582,8 +581,3 @@ void ps2_Poll() {
   // m = modifier, k = buffer of 6 keycodes; priority, vid = 0, pid = 0
 
 }
-
-
-
-
-

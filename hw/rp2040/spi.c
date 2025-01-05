@@ -10,10 +10,10 @@
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
 
-#include "drivers/pins.h"
+#include "pins.h"
 
 // #define DEBUG
-#include "drivers/debug.h"
+#include "debug.h"
 
 #define SPI_SLOW_BAUD   500000
 //#define SPI_SDC_BAUD   24000000

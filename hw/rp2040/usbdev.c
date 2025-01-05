@@ -41,7 +41,7 @@
 #include "tusb.h"
 
 
-// #include "usb.h"
+#include "usb/usb.h"
 #ifdef USB
 #include "usbhost.h"
 #endif
@@ -49,7 +49,7 @@
 #define WORD(a) (a)&0xff, ((a)>>8)&0xff
 
 // #define DEBUG
-#include "drivers/debug.h"
+#include "rpdebug.h"
 
 //#define USB_POLL_DIRECT
 

@@ -52,6 +52,9 @@ set(main_src
   kbdusb.c
   platformmenu.c
   rtc.c
+  
+  # AV specific
+  rtc_hw.c
 )
 
 set(usb_src

@@ -1,3 +1,4 @@
+#if 0
 #include <stdint.h>
 #include "crc16.h"
 
@@ -19,3 +20,4 @@ uint16_t crc16iv(const uint8_t* data_p, uint32_t length, uint16_t iv) {
 
 
 
+#endif

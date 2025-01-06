@@ -16,8 +16,6 @@
 #include "tos.h"
 #include "mist_cfg.h"
 #include "settings.h"
-// #include "rtc.h"
-// #include "common.h"
 #include "usb/joymapping.h"
 
 #include "fpga.h"
@@ -132,7 +130,6 @@ uint32_t GotoBitstreamOffset(FIL *f, uint32_t len) {
   uint8_t blk[512];
   UINT br;
 
-  // blk = (uint8_t *)malloc(512);
   if (f_read(f, blk, 512, &br) == FR_OK) {
     if (blk[0] == 'M' && blk[1] == 'J' && blk[2] == 0x01 && blk[3] == 0x00) {
       int o = 4 + fpga_GetType() * 4;
@@ -144,7 +141,6 @@ uint32_t GotoBitstreamOffset(FIL *f, uint32_t len) {
       f_lseek(f, 0);
     }
   }
-  // free(blk);
   return len;
 }
 #endif

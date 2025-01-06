@@ -86,27 +86,24 @@ char hid_joystick_button_remap(char *s, char action, int tag) {
 
 void usb_hw_init() {}
 
-int UpdateFirmwareUSB() {
-  return ERROR_UPDATE_FAILED;
-}
-
 void WriteFirmware(char *name) {
   debug(("WriteFirmware: name:%s\n", name));
   reset_usb_boot(0, 0);
 }
 
-const char *GetUSBVersion() {
-  return NULL;
+int UpdateFirmwareUSB() {
+  return ERROR_UPDATE_FAILED;
 }
 
+const char *GetHKMVersion() {
+  return NULL;
+}
 
 #ifdef XILINX
 #define ARCH "X"
 #else
 #define ARCH "A"
 #endif
-
-
 
 const char firmwareVersion[] = "v" VERSION ARCH;
 

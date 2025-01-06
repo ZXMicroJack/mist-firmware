@@ -10,8 +10,9 @@
 #include "xmodem.h"
 #include "ikbd.h"
 #include "usb.h"
-// #include "common.h"
+#include "ps2.h"
 #include "fifo.h"
+
 // #define DEBUG
 #include "rpdebug.h"
 
@@ -295,7 +296,6 @@ MOD|LGUI, // 1f: NoEvent
 0x46, // 7c: Print Screen
 0x4B, // 7d: Page Up
 };
-void user_io_kbd(unsigned char m, unsigned char *k, uint8_t priority, unsigned short vid, unsigned short pid);
 
 
 uint8_t const mod2ps2[] = { 0x14, 0x12, 0x11, 0x1f, 0x14, 0x59, 0x11, 0x27 };

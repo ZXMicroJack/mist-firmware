@@ -3,7 +3,6 @@
 #include <stdbool.h>
 
 #include "ini_parser.h"
-// #include "picosynth.h"
 #include "menu.h"
 #include "osd.h"
 #include "errors.h"
@@ -129,20 +128,6 @@ static char KeyEvent_Platform(uint8_t key) {
   return false;
 }
 
-const static char *GetMidiStatus(char *status) {
-#ifdef PICOSYNTH
-  int state = picosynth_GetStatus();
-  sprintf(status, " MIDI status: %d (%s)", state,
-    (state == 0) ? "ok" :
-    (state < 0 && state <= -3) ? "bad-luts" :
-    (state > -3) ? "bad-soundfont" :
-    "bad-unknown");
-  return status;
-#else
-  return " MIDI status: disabled";
-#endif
-}
-
 #ifdef ZXUNO
 const static char *GetBootSequence(char *status) {
   int state = settings_boot_menu();
@@ -157,6 +142,7 @@ const static char *GetFirmwareVersion(char *status) {
   return status;
 }
 
+#if 0
 const static char *GetUSBFWVersion(char *status) {
   extern const char *GetUSBVersion();
   char *v = GetUSBVersion();
@@ -168,6 +154,7 @@ const static char *GetUSBFWVersion(char *status) {
   }
   return status;
 }
+#endif
 
 static char GetMenuItem_Platform(uint8_t idx, char action, menu_item_t *item) {
   static char status[40];
@@ -188,11 +175,11 @@ static char GetMenuItem_Platform(uint8_t idx, char action, menu_item_t *item) {
 					item->active = 1;
 					break;
 
+#if 0
 				case 1:
 					item->item = GetUSBFWVersion(status);
 					item->active = item->item[0] ? 1 : 0;
 					break;
-
         case 2:
 #ifdef ZXUNO
           item->item = GetBootSequence(status);
@@ -202,11 +189,7 @@ static char GetMenuItem_Platform(uint8_t idx, char action, menu_item_t *item) {
           item->active = 0;
 #endif
           break;
-
-        case 3:
-          item->item = GetMidiStatus(status);
-          item->active = 0;
-          break;
+#endif
 
         default:
           return 0;
@@ -218,6 +201,7 @@ static char GetMenuItem_Platform(uint8_t idx, char action, menu_item_t *item) {
           DialogBox("\n     Update the firmware\n        Are you sure?", MENU_DIALOG_YESNO, FirmwareUpdateDialog);
 					break;
 
+#if 0
 				case 1:
           DialogBox("\n   Update the USB firmware\n        Are you sure?", MENU_DIALOG_YESNO, FirmwareUpdateUSBDialog);
 					break;
@@ -226,6 +210,7 @@ static char GetMenuItem_Platform(uint8_t idx, char action, menu_item_t *item) {
 				case 2:
           DialogBox("\n     Display MiSTLita menu\n         on startup?", MENU_DIALOG_YESNO, StartupSequenceSet);
 					break;
+#endif
 #endif
 			}
 			break;

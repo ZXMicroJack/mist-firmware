@@ -48,16 +48,6 @@ int fpga_initialise() {
   gpio_put(GPIO_FPGA_RESET, 1);
 #endif
 
-#ifdef MB2
-#ifdef FPGA_OFFSET
-  pio_add_program_at_offset(fpga_pio, &fpga_program, FPGA_OFFSET);
-  fpga_program_init(fpga_pio, fpga_sm, FPGA_OFFSET, 0);
-#else
-  uint offset = pio_add_program(fpga_pio, &fpga_program);
-  fpga_program_init(fpga_pio, fpga_sm, offset, 0);
-#endif
-  pio_sm_clear_fifos(fpga_pio, fpga_sm);
-#endif
   inited = 1;
 
   return 0;
@@ -169,34 +159,6 @@ int fpga_reset() {
   return 0;
 }
 
-#define CRC32_POLY 0x04c11db7   /* AUTODIN II, Ethernet, & FDDI */
-#define CRC32(crc, byte) \
-        crc = (crc << 8) ^ CRC32_lut[(crc >> 24) ^ byte]
-
-#define PADDING       32
-
-static uint32_t CRC32_lut[256] = {0};
-static void initCRC(void) {
-  int i, j;
-  unsigned long c;
-	if (CRC32_lut[0]) return;
-
-  for (i = 0; i < 256; ++i) {
-    for (c = i << 24, j = 8; j > 0; --j)
-      c = c & 0x80000000 ? (c << 1) ^ CRC32_POLY : (c << 1);
-    CRC32_lut[i] = c;
-  }
-}
-
-
-static uint32_t crc32(uint32_t crc, uint8_t *blk, uint32_t len) {
-  while (len--) {
-    CRC32(crc, *blk);
-    blk++;
-  }
-  return crc;
-}
-
 #ifdef TEST_SD_READS
 #define nada()  do {} while (0)
 #define bitfile_get_length(a,b) b
@@ -235,9 +197,6 @@ int fpga_configure(void *user_data, uint8_t (*next_block)(void *, uint8_t *), ui
   uint32_t thislen;
   int j;
 
-  initCRC();
-  uint32_t crc = 0xffffffff;
-
   debug(("fpga_status: done %u nstatus %u\n", gpio_get(GPIO_FPGA_CONF_DONE), gpio_get(GPIO_FPGA_NSTATUS)));
 
   if (!next_block(user_data, bits)) {
@@ -263,7 +222,7 @@ int fpga_configure(void *user_data, uint8_t (*next_block)(void *, uint8_t *), ui
 
   do {
     thislen = len > 512 ? 512 : len;
-    crc = crc32(crc, bits, thislen);
+    // crc = crc32(crc, bits, thislen);
     
     // clock data out
     for (int i=0; i<thislen; i+=4) {
@@ -320,12 +279,6 @@ int fpga_configure(void *user_data, uint8_t (*next_block)(void *, uint8_t *), ui
   pio_sm_set_enabled(fpga_pio, fpga_sm, false);
   fpga_program_enable(fpga_pio, fpga_sm, 0, false);
   pio_remove_program(fpga_pio, &fpga_program, FPGA_OFFSET);
-
-#ifdef ALTERA_FPGA
-  debug(("fpga_configure: crc %08X %d\n", crc, gpio_get(GPIO_FPGA_CONF_DONE)));
-#else
-  debug(("fpga_configure: crc %08X %d\n", crc, gpio_get(GPIO_FPGA_INITB)));
-#endif
 
 #if defined (ALTERA_FPGA) && !defined (ALTERA_DONT_CHECK_DONE)
   return (gpio_get(GPIO_FPGA_NSTATUS) && gpio_get(GPIO_FPGA_CONF_DONE)) ? 0 : 1;

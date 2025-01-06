@@ -7,7 +7,6 @@
 
 #include "hardware/clocks.h"
 #include "hardware/structs/clocks.h"
-// #include "hardware/flash.h"
 #include "hardware/resets.h"
 #include "hardware/spi.h"
 
@@ -22,16 +21,11 @@
 #include "pio_spi.h"
 #include "sdcard.h"
 #include "fifo.h"
-// #include "kbd.h"
+
 // #define DEBUG
-#include "debug.h"
+#include "rpdebug.h"
 
 #include "mistmain.h"
-
-#ifdef PICOSYNTH
-#include "picosynth.h"
-#include "wtsynth.h"
-#endif
 
 #include "pins.h"
 
@@ -44,21 +38,8 @@
 
 
 void FatalError(unsigned long error) {
-  unsigned long i;
-
   printf("Fatal error: %lu\r", error);
   sleep_ms(2000);
-
-//   while (1) {
-//     for (i = 0; i < error; i++) {
-//       DISKLED_ON;
-//       WaitTimer(250);
-//       DISKLED_OFF;
-//       WaitTimer(250);
-//     }
-//     WaitTimer(1000);
-//     MCUReset();
-//   }
   reset_usb_boot(0, 0);
 }
 
@@ -120,8 +101,6 @@ int main() {
   multicore_launch_core1(usb_core);
 #endif
 
-
-  char lastch = 0;
   for(;;) {
     int c = getchar_timeout_us(2);
     if (c == 'q') break;

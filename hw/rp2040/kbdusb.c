@@ -36,20 +36,13 @@
 //#define DEBUG
 #include "debug.h"
 
-
-// #include "host/usbh.h"
-
 #include "host/usbh.h"
 #include "tusb_xinput/xinput_host.h"
-// #include "/pico/pico-sdk/lib/tinyusb/src/host/usbh_classdriver.h"
 #include "host/usbh_classdriver.h"
 
-
-
-uint8_t usb_kbd_init(usb_device_t *dev, usb_device_descriptor_t *dev_desc) {
+static uint8_t usb_kbd_init(usb_device_t *dev, usb_device_descriptor_t *dev_desc) {
 	return 0;
 }
-
 
 static uint8_t usb_kbd_poll(usb_device_t *dev) {
   uint8_t rpt[9];
@@ -66,7 +59,7 @@ static uint8_t usb_kbd_poll(usb_device_t *dev) {
 	return 0;
 }
 
-uint8_t usb_kbd_release(usb_device_t *dev) {
+static uint8_t usb_kbd_release(usb_device_t *dev) {
 	return 0;
 }
 

@@ -306,9 +306,6 @@
 #define SDCARD_SM 1
 #define SDCARD_OFFSET  30
 
-
-
-
 /*
 
 Planned PIOs

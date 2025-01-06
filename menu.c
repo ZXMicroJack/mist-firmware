@@ -566,10 +566,11 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					break;
 			        }
 				case 8: {
-					extern const char *GetUSBVersion();
-					char *v = GetUSBVersion();
+					extern const char *GetHKMVersion();
+					char *v = (char *)GetHKMVersion();
 					if (v) {
-						siprintf(s, "   USB  s/w ver. %s", v);
+            while (*v ++);
+						siprintf(s, "   %s  s/w ver. %s", v+1, GetHKMVersion());
 						item->item = s;
 					} else {
 						s[0] = 0;

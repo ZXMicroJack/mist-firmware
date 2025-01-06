@@ -184,11 +184,11 @@ int mist_init() {
     rtc_Init();
 #endif
 
-// #ifdef XILINX
-//     fpga_initialise();
-//     fpga_claim(true);
-//     fpga_reset(0);
-// #endif
+#ifdef XILINX
+    fpga_initialise();
+    fpga_claim(true);
+    fpga_reset(0);
+#endif
 
     if(MMC_Init()) mmc_ok = 1;
     else           spi_fast();

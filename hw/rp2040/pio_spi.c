@@ -42,14 +42,10 @@ void __time_critical_func(pio_spi_write8_blocking)(const pio_spi_inst_t *spi, co
 void __time_critical_func(pio_spi_read8_blocking)(const pio_spi_inst_t *spi, uint8_t *dst, size_t len) {
     size_t tx_remain = len, rx_remain = len;
 
-    // restart the state machine
-//     pio_sm_restart(spi->pio, spi->sm);
-    
     io_rw_8 *txfifo = (io_rw_8 *) &spi->pio->txf[spi->sm];
     io_rw_8 *rxfifo = (io_rw_8 *) &spi->pio->rxf[spi->sm];
     while (tx_remain || rx_remain) {
         if (tx_remain && !pio_sm_is_tx_fifo_full(spi->pio, spi->sm)) {
-//             *txfifo = 0;
             *txfifo = 0xff;
             --tx_remain;
         }
@@ -71,7 +67,6 @@ void __time_critical_func(pio_spi_read8_blocking_ex)(const pio_spi_inst_t *spi, 
     io_rw_8 *rxfifo = (io_rw_8 *) &spi->pio->rxf[spi->sm];
     while (rx_remain) {
         if (tx_remain && !pio_sm_is_tx_fifo_full(spi->pio, spi->sm)) {
-//             *txfifo = 0;
             *txfifo = 0xff;
             --tx_remain;
         }
@@ -98,9 +93,6 @@ void __time_critical_func(pio_spi_write8_read8_blocking)(const pio_spi_inst_t *s
                                                          size_t len) {
     size_t tx_remain = len, rx_remain = len;
 
-    // restart the state machine
-//     pio_sm_restart(spi->pio, spi->sm);
-
     io_rw_8 *txfifo = (io_rw_8 *) &spi->pio->txf[spi->sm];
     io_rw_8 *rxfifo = (io_rw_8 *) &spi->pio->rxf[spi->sm];
     while (tx_remain || rx_remain) {
@@ -114,18 +106,6 @@ void __time_critical_func(pio_spi_write8_read8_blocking)(const pio_spi_inst_t *s
         }
     }
 }
-
-#if 0
-static inline void pio_spi_unkill(PIO pio, uint sm, uint pin_sck, uint pin_mosi, uint pin_miso) {
-static inline void pio_spi_kill(PIO pio, uint sm, uint pin_sck, uint pin_mosi, uint pin_miso) {
-
-				
-typedef struct pio_spi_inst {
-    PIO pio;
-    uint sm;
-    uint cs_pin;
-} pio_spi_inst_t;
-#endif
 
 void pio_spi_select(const pio_spi_inst_t *spi, uint8_t state) {
   // printf("pio_spi_select: %d\n", state);
@@ -144,5 +124,3 @@ void pio_spi_select(const pio_spi_inst_t *spi, uint8_t state) {
     gpio_set_dir(spi->cs_pin, GPIO_IN);
 	}
 }
-
-

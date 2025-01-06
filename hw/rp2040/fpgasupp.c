@@ -1,3 +1,4 @@
+#if 0 //TODO remove
 #include <stdio.h>
 #include <stdint.h>
 #include <pico/time.h>
@@ -200,3 +201,4 @@ int fpga_detect_error() {
 #endif
   return boot_recover;
 }
+#endif

@@ -21,12 +21,8 @@
 
 //TODO MJ non USB stuff here
 void MCUReset() {}
-
-void PollADC() {
-}
-
-void InitADC() {
-}
+void PollADC() {}
+// void InitADC() {}
 
 static uint8_t mac[] = {1,2,3,4,5,6};
 uint8_t *get_mac() {
@@ -90,109 +86,9 @@ char hid_joystick_button_remap(char *s, char action, int tag) {
 
 void usb_hw_init() {}
 
-#ifdef MB2
-static uint8_t update_magic[] = {0x3e, 0x85, 0x1f, 0xe3};
-
-int InvokeBootstrap() {
-  int timeout = 80;
-  int result;
-  while (timeout && (result = ipc_Command(IPC_BOOTSTRAP, NULL, 0)) != 0xfd) {
-    sleep_ms(100);
-    printf("result = %d\n", result);
-    timeout --;
-  }
-  printf("_result = %d\n", result);
-  return (result == 0xfd) ? 0 : 1;
-}
-
-void ReturnToNormal() {
-  uint8_t reboot = 0x55;
-  ipc_Command(IPC_REBOOT, &reboot, 1);
-}
-
-#define FLASH_PAGE    4096
-int WriteToUSBFlash(uint32_t addr, uint8_t *data) {
-  uint8_t cmd[128+1];
-  int result;
-
-  for (int i=0; i<32; i++) {
-    cmd[0] = i;
-    memcpy(&cmd[1], &data[i*128], 128);
-    printf("ipc_Command returns %d\n", ipc_Command(IPC_FLASHDATA, cmd, 129));
-  }
-
-  uint16_t crc = crc16(data, FLASH_PAGE);
-  cmd[0] = (addr >> 24) & 0xff;
-  cmd[1] = (addr >> 16) & 0xff;
-  cmd[2] = (addr >> 8) & 0xff;
-  cmd[3] = addr & 0xff;
-  cmd[4] = crc>>8;
-  cmd[5] = crc&0xff;
-
-  result = ipc_Command(IPC_FLASHCOMMIT, cmd, 6);
-
-  debug(("ipc_Command returns %d\n", result));
-  return result;
-}
-
-int UpdateFirmwareUSB() {
-  FIL file;
-  uint32_t size;
-  UINT br;
-  uint8_t *data;
-  uint32_t addr = FLASH_APPSIGNATURE;
-
-  //ERROR_INVALID_DATA
-  //ERROR_UPDATE_FAILED
-
-  if (f_open(&file, "/RP2UAPP.BIN", FA_READ) == FR_OK) {
-    size = f_size(&file);
-
-    int result = InvokeBootstrap();
-    debug(("InvokeBootstrap(); returns %d\n", result));
-    if (result) {
-      f_close(&file);
-      return ERROR_UPDATE_FAILED;
-    }
-    
-    data = (uint8_t *)malloc(FLASH_PAGE);
-    while (size) {
-      uint32_t this_read = size > FLASH_PAGE ? FLASH_PAGE : size;
-      
-      memset(data, 0xff, FLASH_PAGE);
-      if (f_read(&file, data, FLASH_PAGE, &br) == FR_OK) {
-        /* check first block */
-        if (addr == FLASH_APPSIGNATURE) {
-          if (memcmp(data, update_magic, sizeof update_magic)) {
-            debug(("Error: magic is %02X%02X%02X%02X\n", data[0], data[1], data[2], data[3]));
-            free(data);
-            f_close(&file);
-            ReturnToNormal();
-            return ERROR_INVALID_DATA;
-          }
-        }
-        WriteToUSBFlash(addr, data);
-      }
-      size -= this_read;
-      addr += FLASH_PAGE;
-    }
-
-    free(data);
-    f_close(&file);
-    ReturnToNormal();
-
-    return 0;
-  } else {
-    debug(("failed to open file\n"));
-    return ERROR_FILE_NOT_FOUND;
-  }
-}
-
-#else
 int UpdateFirmwareUSB() {
   return ERROR_UPDATE_FAILED;
 }
-#endif
 
 void WriteFirmware(char *name) {
   debug(("WriteFirmware: name:%s\n", name));
@@ -200,38 +96,14 @@ void WriteFirmware(char *name) {
 }
 
 const char *GetUSBVersion() {
-#ifdef MB2
-  uint8_t major, minor;
-  static char version[] = "v_.___";
-
-  debug(("Get version\n"));
-
-  major = ipc_Command(IPC_VERSIONMAJOR, NULL, 0);
-  minor = ipc_Command(IPC_VERSIONMINOR, NULL, 0);
-
-  version[1] = major + '0';
-  sprintf(&version[3], "%d", minor);
-  return (const char *)version;
-#else
   return NULL;
-#endif
 }
 
 
 #ifdef XILINX
-#ifdef ZXUNO
-#define ARCH "XZX1"
-#elif defined(MB2)
-#define ARCH "XMB2"
+#define ARCH "X"
 #else
-#define ARCH "XMB1"
-#endif
-#else
-#if defined(MB2)
-#define ARCH "AN+2"
-#else
-#define ARCH "AN+"
-#endif
+#define ARCH "A"
 #endif
 
 
@@ -250,18 +122,3 @@ unsigned char CheckFirmware(char *name) {
   // ERROR_INVALID_DATA
   return 1;
 }
-
-//// keyboard handling....
-//TODO MJ Add detection of this in the PS2 keyboard
-// PAUSE -> 6F
-// ps2rx E0
-// ps2rx 12
-// ps2rx E0
-// ps2rx 7C
-// ps2rx E0
-// ps2rx F0
-// ps2rx 7C
-// ps2rx E0
-// ps2rx F0
-// ps2rx 12
-

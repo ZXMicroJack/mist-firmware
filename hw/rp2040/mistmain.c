@@ -200,9 +200,6 @@ int mist_init() {
     iprintf("spiclk: %u MHz\r", GetSPICLK());
 
     usb_init();
-    InitDB9();
-
-    InitADC();
 
 #ifdef USB_STORAGE
     if(UserButton()) USB_BOOT_VAR = (USB_BOOT_VAR == USB_BOOT_VALUE) ? 0 : USB_BOOT_VALUE;
@@ -314,9 +311,9 @@ int mist_loop() {
   }
 #endif
 
-  // ps2_Poll();
+  ps2_Poll();
 
-  // cdc_control_poll();
+  cdc_control_poll();
   storage_control_poll();
 #ifdef USB
   usb_deferred_poll();

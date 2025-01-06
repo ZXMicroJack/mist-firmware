@@ -14,11 +14,9 @@
 
 // #define DEBUG
 #include "debug.h"
-// #include "usbrtc.h"
 
-// #include "common.h"
-
-uint32_t systimer;
+/* prototypes */
+void DB9Update(uint8_t joy_num, uint8_t usbjoy);
 
 //TODO MJ - can XMODEM be removed?  Serial to core is fine.
 // A buffer of 256 bytes makes index handling pretty trivial
@@ -31,8 +29,8 @@ volatile static unsigned char rx_rptr, rx_wptr;
 #endif
 
 //TODO MJ - re-integrate XMODEM and UART with core.
-void Usart0IrqHandler(void) {
 #if 0
+void Usart0IrqHandler(void) {
       	// Read USART status
   unsigned char status = AT91C_BASE_US0->US_CSR;
 
@@ -59,10 +57,11 @@ void Usart0IrqHandler(void) {
       // nothing else to send, disable interrupt
       AT91C_BASE_US0->US_IDR = AT91C_US_TXRDY;
   }
-#endif
 }
+#endif
 
 // check usart rx buffer for data
+// Not used.
 void USART_Poll(void) {
 #if 0
   if(Buttons() & 2)
@@ -87,8 +86,8 @@ void USART_Poll(void) {
 #endif
 }
 
-void USART_Write(unsigned char c) {
 #if 0
+void USART_Write(unsigned char c) {
 #if 0
   while(!(AT91C_BASE_US0->US_CSR & AT91C_US_TXRDY));
   AT91C_BASE_US0->US_THR = c;
@@ -106,8 +105,8 @@ void USART_Write(unsigned char c) {
 
   AT91C_BASE_US0->US_IER = AT91C_US_TXRDY;  // enable interrupt
 #endif
-#endif
 }
+#endif
 
 void USART_Init(unsigned long baudrate) {
 #if 0
@@ -146,11 +145,7 @@ void USART_Init(unsigned long baudrate) {
 
 unsigned long CheckButton(void)
 {
-#ifdef BUTTON
-    return((~*AT91C_PIOA_PDSR) & BUTTON);
-#else
-    return MenuButton();
-#endif
+  return MenuButton();
 }
 
 void InitRTTC() {
@@ -174,9 +169,9 @@ unsigned long CheckTimer(unsigned long time)
 
 void WaitTimer(unsigned long time)
 {
-    time = GetTimer(time);
-    while (!CheckTimer(time))
-      tight_loop_contents();
+  time = GetTimer(time);
+  while (!CheckTimer(time))
+    tight_loop_contents();
 }
 
 
@@ -199,7 +194,6 @@ unsigned char UserButton() {
   return 0;
 }
 
-#ifdef ZXUNO
 #define GPIO_JRT        28
 #define GPIO_JLT        15
 #define GPIO_JDN        14
@@ -236,6 +230,7 @@ char GetDB9(char index, unsigned char *joy_map) {
   return 1;
 }
 
+//TODO centralise legacy mode
 static uint8_t db9_legacy_mode = 0;
 static void SetGpio(uint8_t usbjoy, uint8_t mask, uint8_t gpio) {
   gpio_put(gpio, (usbjoy & mask) ? 0 : 1);
@@ -255,88 +250,3 @@ void DB9Update(uint8_t joy_num, uint8_t usbjoy) {
   SetGpio(usbjoy, JOY_RIGHT, GPIO_JRT);
   SetGpio(usbjoy, JOY_BTN1, GPIO_JF1);
 }
-#else
-void InitDB9() {}
-const static uint8_t joylut[] = {JOY_UP, JOY_DOWN, JOY_LEFT, JOY_RIGHT, JOY_BTN1, JOY_BTN2, 0, 0};
-
-#ifdef JAMMA_JAMMA
-const static uint16_t jammalut[2][24] = {
-  {
-    JOY_Y, JOY_X, JOY_A, JOY_B, JOY_RIGHT, JOY_LEFT, JOY_DOWN, JOY_UP,
-    0, 0, 0, 0, JOY_R, JOY_L, JOY_BTN3, JOY_BTN4, 
-    0, 0, 0, 0, 0, 0, 0, 0
-  }, {
-    0, 0, 0, 0, 0, 0, 0, 0,
-    JOY_RIGHT, JOY_LEFT, JOY_DOWN, JOY_UP, 0, 0, 0, 0,
-    JOY_R, JOY_L, JOY_BTN3, JOY_BTN4, JOY_Y, JOY_X, JOY_A, JOY_B
-  }
-};
-
-const static uint8_t jammadb9lut[2][24] = {
-  {
-    DB9_BTN4, DB9_BTN3, DB9_BTN2, DB9_BTN1, DB9_RIGHT, DB9_LEFT, DB9_DOWN, DB9_UP,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0
-  }, {
-    0, 0, 0, 0, 0, 0, 0, 0,
-    DB9_RIGHT, DB9_LEFT, DB9_DOWN, DB9_UP, 0, 0, 0, 0,
-    0, 0, 0, 0, DB9_BTN4, DB9_BTN3, DB9_BTN2, DB9_BTN1
-  }
-};
-#endif
-
-#ifdef JAMMA_JAMMA
-static uint8_t jammadb9[2] = {0x00, 0x00};
-static uint8_t usbdb9[2] = {0x00, 0x00};
-
-void JammaToDB9() {
-  uint8_t ndx = 0;
-  uint8_t j = 0;
-  uint8_t depth = jamma_GetDepth();
-
-  for (uint8_t index=0; index<2; index++) {
-    uint32_t d = ~jamma_GetJamma();
-    for (ndx = 0; ndx < depth; ndx++) {
-      j |= (d & 1) ? jammadb9lut[index][ndx] : 0;
-      d >>= 1;
-    }
-    if (jammadb9[index] != j) {
-      jammadb9[index] = j;
-      jamma_SetData(index, j | usbdb9[index]);
-      debug(("JammaToDB9: %02X (usb %02X)\n", j, usbdb9[index]));
-      debug(("jamma %X: depth: %d\n", jamma_GetJamma(), depth));
-    }
-  }
-}
-#endif
-
-char GetDB9(char index, unsigned char *joy_map) {
-  *joy_map = 0;
-  return 1;
-}
-
-//const static uint8_t inv_joylut[] = {DB9_BTN4, DB9_BTN3, DB9_BTN2, DB9_BTN1, DB9_UP, DB9_DOWN, DB9_LEFT, DB9_RIGHT};
-void DB9Update(uint8_t joy_num, uint8_t usbjoy) {
-#if 0
-  uint8_t mask = 0x80;
-  uint8_t ndx = 0;
-  uint8_t joydata = 0;
-
-  while (mask) {
-    if (usbjoy & mask) joydata |= inv_joylut[ndx];
-    ndx++;
-    mask >>= 1;
-  }
-
-#ifdef JAMMA_JAMMA
-  usbdb9[joy_num & 1] = joydata;
-  jamma_SetData(joy_num & 1, joydata | jammadb9[joy_num&1]);
-#else
-  jamma_SetData(joy_num & 1, joydata);
-#endif
-#endif
-}
-
-void DB9SetLegacy(uint8_t on) {
-}
-#endif

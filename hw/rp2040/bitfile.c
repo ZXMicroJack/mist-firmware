@@ -14,7 +14,6 @@ uint32_t bitfile_get_length(uint8_t *data, uint32_t filesize, uint8_t *chipType)
   uint8_t tag;
   uint16_t len;
   
-//   i = 3;
   /* is ZX3 file? */
   if (data[0] == 0xff && data[1] == 0xff) {
     return filesize ? filesize : 0xffffffff;

@@ -250,3 +250,7 @@ void DB9Update(uint8_t joy_num, uint8_t usbjoy) {
   SetGpio(usbjoy, JOY_RIGHT, GPIO_JRT);
   SetGpio(usbjoy, JOY_BTN1, GPIO_JF1);
 }
+
+/* doesn't do anything, but is needed to stub it out. */
+void usb_poll() {
+}

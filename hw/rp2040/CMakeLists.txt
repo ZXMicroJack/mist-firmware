@@ -40,16 +40,16 @@ set(driver_src
 )
 
 set(main_src
-  glue.c
-  spi.c
-  usbdev.c
-  hardware.c
   mist.c
   mistmain.c
+  
+  spi.c
+
+  glue.c
+  hardware.c
   mmc.c
   keyboard.c
   fpgaconfig.c
-  kbdusb.c
   platformmenu.c
   rtc.c
   
@@ -58,7 +58,9 @@ set(main_src
 )
 
 set(usb_src
-./usbhost/hid_app_mist.c
+  kbdusb.c
+  usbdev.c
+  ./usbhost/hid_app_mist.c
   ./usbhost/msc_app.c
   ./usbhost/xinput.c
   ./tusb_xinput/xinput_host.c

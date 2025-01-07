@@ -145,8 +145,3 @@ unsigned long MMC_GetCapacity() {
 	  return(result);
 	}
 }
-
-//assume MMC is inserted
-char mmc_inserted() {
-  return 1;
-}

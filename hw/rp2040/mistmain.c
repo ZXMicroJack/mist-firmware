@@ -37,44 +37,55 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // 2010-08-15   - support for joystick emulation
 // 2010-08-18   - clean-up
 
-#include "stdio.h"
+#include <stdio.h>
 #include "string.h"
 
+#include "pico/stdlib.h"
+#include "pico/bootrom.h"
 #include "pico/time.h"
+#include "pico/multicore.h"
 #include "hardware/watchdog.h"
+#include "hardware/gpio.h"
+
+#include "ps2.h"
+
 // #include "drivers/cookie.h"
 
 #include "errors.h"
-#include "hardware.h"
-#include "mmc.h"
-#include "fat_compat.h"
-#include "osd.h"
+// #include "hardware.h"
+// #include "mmc.h"
+// #include "fat_compat.h"
+// #include "osd.h"
 #include "fpga.h"
-#include "fdd.h"
-#include "hdd.h"
+// #include "fdd.h"
+// #include "hdd.h"
 #include "config.h"
 #include "menu.h"
 #include "user_io.h"
-#include "arc_file.h"
-#include "font.h"
+// #include "arc_file.h"
+// #include "font.h"
 #include "tos.h"
-#include "usb.h"
-#include "debug.h"
-#include "mist_cfg.h"
-#include "usbdev.h"
+// #include "usb.h"
+// #include "debug.h"
+// #include "mist_cfg.h"
 #include "cdc_control.h"
 #include "storage_control.h"
 #include "FatFs/diskio.h"
-#include "mistmain.h"
-#include "settings.h"
+// #include "mistmain.h"
+// #include "settings.h"
 
-#include "fifo.h"
-#include "pins.h"
-#include "fpga.h"
+// #include "fifo.h"
+// #include "pins.h"
+// #include "fpga.h"
 // #define DEBUG
 #include "rpdebug.h"
 
-#include "hardware/gpio.h"
+
+#ifdef USB
+#include "bsp/board.h"
+#include "tusb.h"
+#endif
+#include "usbdev.h"
 
 // #include "rtc.h"
 
@@ -356,4 +367,76 @@ int mist_loop() {
       if(user_io_core_type() == CORE_TYPE_ARCHIE) HandleUI();
     }
     return 0;
+}
+
+#ifdef USB
+static void usb_core() {
+  for(;;) {
+    tuh_task();
+  }
+}
+#endif
+
+void FatalError(unsigned long error) {
+  printf("Fatal error: %lu\r", error);
+  sleep_ms(2000);
+  reset_usb_boot(0, 0);
+}
+
+#if PICO_NO_FLASH
+static void enable_xip(void) {
+  rom_connect_internal_flash_fn connect_internal_flash = (rom_connect_internal_flash_fn)rom_func_lookup_inline(ROM_FUNC_CONNECT_INTERNAL_FLASH);
+    rom_flash_exit_xip_fn flash_exit_xip = (rom_flash_exit_xip_fn)rom_func_lookup_inline(ROM_FUNC_FLASH_EXIT_XIP);
+    rom_flash_flush_cache_fn flash_flush_cache = (rom_flash_flush_cache_fn)rom_func_lookup_inline(ROM_FUNC_FLASH_FLUSH_CACHE);
+    rom_flash_enter_cmd_xip_fn flash_enter_cmd_xip = (rom_flash_enter_cmd_xip_fn)rom_func_lookup_inline(ROM_FUNC_FLASH_ENTER_CMD_XIP);
+
+    connect_internal_flash();    // Configure pins
+    flash_exit_xip();            // Init SSI, prepare flash for command mode
+    flash_flush_cache();         // Flush & enable XIP cache
+    flash_enter_cmd_xip();       // Configure SSI with read cmd
+}
+#endif
+
+int main() {
+  // hold FPGA in reset until we decide what to do with it - (ZXTRES only)
+#ifndef ZXUNO
+  fpga_holdreset();
+#endif
+
+  stdio_init_all();
+
+#if PICO_NO_FLASH
+  sleep_ms(2000); // usb settle delay
+#endif
+
+#if PICO_NO_FLASH
+  enable_xip();
+#endif
+
+  printf("Drivertest Microjack\'23\n");
+
+#ifdef USB
+  board_init();
+  tusb_init();
+#endif
+
+  /* initialise MiST software */
+  mist_init();
+
+  /* start usb and sound process */
+#ifdef USB
+  multicore_reset_core1();
+  multicore_launch_core1(usb_core);
+#endif
+
+  for(;;) {
+    int c = getchar_timeout_us(2);
+    if (c == 'q') break;
+
+    mist_loop();
+    usb_poll();
+  }
+
+  reset_usb_boot(0, 0);
+	return 0;
 }

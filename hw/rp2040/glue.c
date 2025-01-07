@@ -56,7 +56,15 @@ int8_t pl2303_is_blocked(void) {
 uint8_t get_pl2303s(void) {
   return 0;
 }
-// #endif
+
+// STUBS
+void usb_dev_open(void) {}
+void usb_dev_reconnect(void) {}
+
+// TODO IMPLEMENT
+uint8_t  usb_cdc_is_configured(void) { return 0; }
+uint16_t usb_cdc_write(const char *pData, uint16_t length) { return 0; }
+uint16_t usb_cdc_read(char *pData, uint16_t length) { return 0; }
 
 #ifndef USB
 // return number of joysticks
@@ -85,6 +93,9 @@ char hid_joystick_button_remap(char *s, char action, int tag) {
 #endif
 
 void usb_hw_init() {}
+#ifndef USB
+void usb_init() {}
+#endif
 
 void WriteFirmware(char *name) {
   debug(("WriteFirmware: name:%s\n", name));

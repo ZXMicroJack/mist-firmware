@@ -1,19 +1,17 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "spi.h"
-#include "hardware.h"
-
-// #undef spi_init
 #include "hardware/spi.h"
 #include "pico/bootrom.h"
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
 
+#include "spi.h"
+#include "hardware.h"
 #include "pins.h"
 
 // #define DEBUG
-#include "debug.h"
+#include "rpdebug.h"
 
 #define SPI_SLOW_BAUD   500000
 //#define SPI_SDC_BAUD   24000000

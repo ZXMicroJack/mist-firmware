@@ -48,35 +48,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hardware/gpio.h"
 
 #include "ps2.h"
-
-// #include "drivers/cookie.h"
-
 #include "errors.h"
-// #include "hardware.h"
-// #include "mmc.h"
-// #include "fat_compat.h"
-// #include "osd.h"
+#include "mmc.h"
 #include "fpga.h"
-// #include "fdd.h"
-// #include "hdd.h"
+#include "fpgadev.h"
+#include "fdd.h"
 #include "config.h"
 #include "menu.h"
 #include "user_io.h"
-// #include "arc_file.h"
-// #include "font.h"
+#include "arc_file.h"
+#include "font.h"
 #include "tos.h"
-// #include "usb.h"
-// #include "debug.h"
-// #include "mist_cfg.h"
 #include "cdc_control.h"
 #include "storage_control.h"
 #include "FatFs/diskio.h"
-// #include "mistmain.h"
-// #include "settings.h"
+#include "platform.h"
+#include "keyboard.h"
 
-// #include "fifo.h"
-// #include "pins.h"
-// #include "fpga.h"
 // #define DEBUG
 #include "rpdebug.h"
 
@@ -86,16 +74,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tusb.h"
 #endif
 #include "usbdev.h"
-
-// #include "rtc.h"
-
-// #include "mbconfig.h"
-// #include "common.h"
-
-
-#ifndef _WANT_IO_LONG_LONG
-#error "newlib lacks support of long long type in IO functions. Please use a toolchain that was compiled with option --enable-newlib-io-long-long."
-#endif
+#include "rtc.h"
 
 const char version[] = {"$VER:ATH" VDATE};
 
@@ -130,6 +109,7 @@ void set_legacy_mode(uint8_t mode) {
   if (mode != legacy_mode) {
     debug(("Setting legacy mode to %d\n", mode));
     DB9SetLegacy(mode);
+    km_SetLegacyMode(mode);
   }
   legacy_mode = mode;
 }
@@ -191,7 +171,7 @@ int mist_init() {
     iprintf("Version %s\r\r", version+5);
 
     mist_spi_init();
-#ifdef RTC
+#ifndef NO_RTC
     rtc_Init();
 #endif
 
@@ -308,13 +288,13 @@ int mist_init() {
 }
 
 
-#ifdef RTC
+#ifndef NO_RTC
 static uint64_t lastRtcSync = 0;
 #define RTC_SYNC    1000000
 #endif
 
 int mist_loop() {
-#ifdef RTC
+#ifndef NO_RTC
   uint64_t now = time_us_64();
   if (!lastRtcSync || now > (lastRtcSync + RTC_SYNC)) {
     lastRtcSync = now;
@@ -322,7 +302,9 @@ int mist_loop() {
   }
 #endif
 
-  ps2_Poll();
+  km_PollUSB();
+  platform_PollHKM();
+  km_PollPS2();
 
   cdc_control_poll();
   storage_control_poll();
@@ -413,7 +395,7 @@ int main() {
   enable_xip();
 #endif
 
-  printf("Drivertest Microjack\'23\n");
+  printf("RP2040 MiST firmware port, Microjack\'23\n");
 
 #ifdef USB
   board_init();
@@ -421,6 +403,7 @@ int main() {
 #endif
 
   /* initialise MiST software */
+  fpga_reset();
   mist_init();
 
   /* start usb and sound process */

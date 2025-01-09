@@ -18,7 +18,7 @@
 #include "settings.h"
 #include "usb/joymapping.h"
 
-#include "fpga.h"
+#include "fpgadev.h"
 #include "bitfile.h"
 //#define DEBUG
 #include "rpdebug.h"

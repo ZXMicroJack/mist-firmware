@@ -24,6 +24,7 @@
 #include "utils.h"
 #include "usbdev.h"
 #include "hardware.h"
+#include "keyboard.h"
 #include "mist_cfg.h"
 
 #undef SCSI_CMD_TEST_UNIT_READY
@@ -227,13 +228,13 @@ void usb_deferred_poll() {
       /* handle USB keyboard and mouse and replay through PS2 */
       if (report[i].last_report && report[i].type == USB_TYPE_KEYBOARD) {
         if (report[i].report_size == 8) {
-          usb_ToPS2(report[i].last_report[0], &report[i].last_report[2]);
+          km_UsbToPS2Keyboard(report[i].last_report[0], &report[i].last_report[2]);
         } else {
-          usb_ToPS2(report[i].last_report[1], &report[i].last_report[3]);
+          km_UsbToPS2Keyboard(report[i].last_report[1], &report[i].last_report[3]);
         }
       }
       if (report[i].last_report && report[i].type == USB_TYPE_MOUSE) {
-        usb_ToPS2Mouse(report[i].last_report, report[i].report_size);
+        km_UsbToPS2Mouse(report[i].last_report, report[i].report_size);
       }
 
       /* reports picked up on other core handled on this one */

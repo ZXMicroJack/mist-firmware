@@ -5,5 +5,6 @@ void ps2_Poll();
 
 int mist_init();
 int mist_loop();
+void km_SetLegacyMode(uint8_t mode);
 
 #endif

@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "spi.h"
-#include "hardware.h"
 #include "hardware/rtc.h"
 #include "hardware/spi.h"
 #include "pico/bootrom.h"
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
+
+#include "spi.h"
+#include "hardware.h"
 
 // #define DEBUG
 #include "rpdebug.h"

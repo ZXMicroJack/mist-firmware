@@ -30,19 +30,17 @@ include(example_auto_set_url.cmake)
 include_directories(. ../.. ../../usb .. ../tusb_xinput)
 
 set(driver_src
-  fpga.c
+  fpgadev.c
   pio_spi.c
   sdcard.c
   bitfile.c
   fifo.c
-  crc16.c
   ps2.c
 )
 
 set(main_src
-  mist.c
   mistmain.c
-  
+
   spi.c
 
   glue.c
@@ -52,6 +50,7 @@ set(main_src
   fpgaconfig.c
   platformmenu.c
   rtc.c
+  platform.c
   
   # AV specific
   rtc_hw.c

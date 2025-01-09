@@ -1,26 +1,33 @@
 #include <ctype.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "attrs.h"
 #include "hardware.h"
 #include "user_io.h"
 #include "xmodem.h"
 #include "ikbd.h"
 #include "usb.h"
+#include "pins.h"
 
-#include <pico/time.h>
+#include "pico/stdlib.h"
+#include "pico/time.h"
+
 #include "hardware/gpio.h"
+#include "hardware/uart.h"
+
 #include "usb/joymapping.h"
 #include "mist_cfg.h"
 
 // #define DEBUG
-#include "debug.h"
+#include "rpdebug.h"
 
 /* prototypes */
 void DB9Update(uint8_t joy_num, uint8_t usbjoy);
 
-//TODO MJ - can XMODEM be removed?  Serial to core is fine.
 // A buffer of 256 bytes makes index handling pretty trivial
-#if 0
+#ifdef USE_UART
 volatile static unsigned char tx_buf[256];
 volatile static unsigned char tx_rptr, tx_wptr;
 
@@ -28,34 +35,35 @@ volatile static unsigned char rx_buf[256];
 volatile static unsigned char rx_rptr, rx_wptr;
 #endif
 
-//TODO MJ - re-integrate XMODEM and UART with core.
-#if 0
-void Usart0IrqHandler(void) {
-      	// Read USART status
-  unsigned char status = AT91C_BASE_US0->US_CSR;
+#if USE_UART==0
+# define uart uart0
+# define UART_IRQ UART0_IRQ
+#elif USE_UART==1
+# define uart uart1
+# define UART_IRQ UART1_IRQ
+#endif
 
-  // received something?
-  if(status & AT91C_US_RXRDY) {
+#ifdef USE_UART
+void UsartIrqHandler(void) {
+  if (uart_is_readable(uart)) {
     // read byte from usart
-    unsigned char c = AT91C_BASE_US0->US_RHR;
-
+    uint8_t ch = uart_getc(uart);
     // only store byte if rx buffer is not full
     if((unsigned char)(rx_wptr + 1) != rx_rptr) {
       // there's space in buffer: use it
-      rx_buf[rx_wptr++] = c;
+      rx_buf[rx_wptr++] = ch;
     }
   }
-    
-  // ready to transmit further bytes?
-  if(status & AT91C_US_TXRDY) {
 
+  if (uart_is_writable(uart)) {
     // further bytes to send in buffer? 
-    if(tx_wptr != tx_rptr)
+    if(tx_wptr != tx_rptr) {
       // yes, simply send it and leave irq enabled
-      AT91C_BASE_US0->US_THR = tx_buf[tx_rptr++];
-    else
+      uart_putc(uart, tx_buf[tx_rptr++]);
+    } else {
       // nothing else to send, disable interrupt
-      AT91C_BASE_US0->US_IDR = AT91C_US_TXRDY;
+      uart_set_irq_enables(uart, true, false);
+    }
   }
 }
 #endif
@@ -63,7 +71,7 @@ void Usart0IrqHandler(void) {
 // check usart rx buffer for data
 // Not used.
 void USART_Poll(void) {
-#if 0
+#ifdef USE_UART
   if(Buttons() & 2)
     xmodem_poll();
 
@@ -86,60 +94,40 @@ void USART_Poll(void) {
 #endif
 }
 
-#if 0
+#ifdef USE_UART
 void USART_Write(unsigned char c) {
-#if 0
-  while(!(AT91C_BASE_US0->US_CSR & AT91C_US_TXRDY));
-  AT91C_BASE_US0->US_THR = c;
-#else
-  if((AT91C_BASE_US0->US_CSR & AT91C_US_TXRDY) && (tx_wptr == tx_rptr)) {
+  if (tx_wptr == tx_rptr) {
     // transmitter ready and buffer empty? -> send directly
-    AT91C_BASE_US0->US_THR = c;
+    uart_putc(uart, c);
   } else {
     // transmitter is not ready: block until space in buffer
-    while((unsigned char)(tx_wptr + 1) == tx_rptr);
+    while((unsigned char)(tx_wptr + 1) == tx_rptr)
+      tight_loop_contents();
 
     // there's space in buffer: use it
     tx_buf[tx_wptr++] = c;
   }
 
-  AT91C_BASE_US0->US_IER = AT91C_US_TXRDY;  // enable interrupt
-#endif
+  uart_set_irq_enables(uart, true, true); // enable interrupt
 }
 #endif
 
 void USART_Init(unsigned long baudrate) {
-#if 0
-    	// Configure PA5 and PA6 for USART0 use
-    AT91C_BASE_PIOA->PIO_PDR = AT91C_PA5_RXD0 | AT91C_PA6_TXD0;
+#ifdef USE_UART
+  gpio_set_function(GPIO_UART_RX_PIN, GPIO_FUNC_UART);
+  gpio_set_function(GPIO_UART_TX_PIN, GPIO_FUNC_UART);
+  uart_init (uart, baudrate);
+  uart_set_hw_flow(uart, false, false);
 
-    // Enable the peripheral clock in the PMC
-    AT91C_BASE_PMC->PMC_PCER = 1 << AT91C_ID_US0;
+  irq_set_exclusive_handler(UART_IRQ, UsartIrqHandler);
+  irq_set_enabled(UART_IRQ, true);
+  uart_set_irq_enables(uart, true, false);
 
-    // Reset and disable receiver & transmitter
-    AT91C_BASE_US0->US_CR = AT91C_US_RSTRX | AT91C_US_RSTTX | AT91C_US_RXDIS | AT91C_US_TXDIS;
+  // tx buffer is initially empty
+  tx_rptr = tx_wptr = 0;
 
-    // Configure USART0 mode
-    AT91C_BASE_US0->US_MR = AT91C_US_USMODE_NORMAL | AT91C_US_CLKS_CLOCK | AT91C_US_CHRL_8_BITS | 
-      AT91C_US_PAR_NONE | AT91C_US_NBSTOP_1_BIT | AT91C_US_CHMODE_NORMAL;
-
-    // Configure USART0 rate
-    AT91C_BASE_US0->US_BRGR = MCLK / 16 / baudrate;
-
-    // Enable receiver & transmitter
-    AT91C_BASE_US0->US_CR = AT91C_US_RXEN | AT91C_US_TXEN;
-
-    // tx buffer is initially empty
-    tx_rptr = tx_wptr = 0;
-
-    // and so is rx buffer
-    rx_rptr = rx_wptr = 0;
-
-    // Set the USART0 IRQ handler address in AIC Source
-    AT91C_BASE_AIC->AIC_SVR[AT91C_ID_US0] = (unsigned int)Usart0IrqHandler; 
-    AT91C_BASE_AIC->AIC_IECR = (1<<AT91C_ID_US0);
-
-    AT91C_BASE_US0->US_IER = AT91C_US_RXRDY;  // enable rx interrupt
+  // and so is rx buffer
+  rx_rptr = rx_wptr = 0;
 #endif
 }
 
@@ -200,6 +188,7 @@ unsigned char UserButton() {
 #define GPIO_JUP        12
 #define GPIO_JF1        11
 
+#ifdef DB9_GPIO
 void InitDB9() {
   uint8_t lut[] = { GPIO_JRT, GPIO_JLT, GPIO_JDN, GPIO_JUP, GPIO_JF1 };
   for (int i=0; i<sizeof lut; i++) {
@@ -250,6 +239,17 @@ void DB9Update(uint8_t joy_num, uint8_t usbjoy) {
   SetGpio(usbjoy, JOY_RIGHT, GPIO_JRT);
   SetGpio(usbjoy, JOY_BTN1, GPIO_JF1);
 }
+#else
+void InitDB9() {}
+
+char GetDB9(char index, unsigned char *joy_map) {
+  *joy_map = 0;
+  return 0;
+}
+
+void DB9SetLegacy(uint8_t on) {}
+
+#endif
 
 /* doesn't do anything, but is needed to stub it out. */
 void usb_poll() {

@@ -235,7 +235,7 @@ void ipc_HandleData(uint8_t tag, uint8_t *data, uint16_t len) {
   }
 }
 
-void mb2_SendPS2(uint8_t *data, uint8_t len) {
+void ps2_Send(uint8_t *data, uint8_t len) {
   debug(("mb2_SendPS2(len %d)\n", len));
 #ifdef USB_ON_CORE2
   if (len > 1) {

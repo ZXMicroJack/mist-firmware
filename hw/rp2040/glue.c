@@ -10,7 +10,7 @@
 #include "version.h"
 #include "fifo.h"
 #include "pins.h"
-#include "crc16.h"
+// #include "crc16.h"
 #include "FatFs/ff.h"
 
 //#define DEBUG

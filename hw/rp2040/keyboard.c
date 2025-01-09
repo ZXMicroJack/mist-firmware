@@ -12,6 +12,7 @@
 #include "usb.h"
 #include "ps2.h"
 #include "fifo.h"
+#include "platform.h"
 
 // #define DEBUG
 #include "rpdebug.h"
@@ -333,14 +334,14 @@ static int isExtended(uint8_t data) {
      data >= 0x81);
 }
 
-static uint8_t curr_legacy_mode = 0;
+static uint8_t curr_legacy_mode = 0xff;
 static uint8_t legacy_mode = 0;
 
 static int mousex = 0, mousey = 0, mouseb = 0;
 static int mouseindex = -1;
 static char mousereport[3];
 
-void usb_ToPS2(uint8_t modifier, uint8_t keys[6]) {
+void km_UsbToPS2Keyboard(uint8_t modifier, uint8_t keys[6]) {
   debug(("usb_ToPS2: modifier %02X keys %02X %02X %02X %02X %02X %02X legacy %d\n",
     modifier, keys[0], keys[1], keys[2], keys[3], keys[4], keys[5], curr_legacy_mode));
 
@@ -410,18 +411,10 @@ void usb_ToPS2(uint8_t modifier, uint8_t keys[6]) {
   }
   prev_modifier = modifier;
 
-#ifdef MB2
-  if (nrps2 > 1) mb2_SendPS2(ps2, nrps2);
-#else
-  if (nrps2 > 1) {
-    for (int i=1; i<nrps2; i++) {
-      ps2_SendChar(0, ps2[i]);
-    }
-  }
-#endif
+  if (nrps2 > 1) ps2_Send(ps2, nrps2);
 }
 
-void usb_ToPS2Mouse(uint8_t report[], uint16_t len) {
+void km_UsbToPS2Mouse(uint8_t report[], uint16_t len) {
   if (!curr_legacy_mode) return;
   
   if (len >= 3) {
@@ -430,25 +423,20 @@ void usb_ToPS2Mouse(uint8_t report[], uint16_t len) {
       ps2[1] = (report[0] & 7) | 0x08;
       ps2[2] = report[1]; // x
       ps2[3] = -report[2]; // y
-
-#ifdef MB2
-      mb2_SendPS2(ps2, 4);
-#else
-      for (int i=1; i<4; i++) {
-        ps2_SendChar(1, ps2[i]);
-      }
-#endif
+      ps2_Send(ps2, 4);
   }
 }
 
 
-#ifndef MB2
-uint64_t mouse_enable_at = 0;
-int mousestandoff = 0;
-#define MOUSE_POST_RESET_ENABLE   1000000
+#ifdef MOUSE_POST_RESET_ENABLE
+static uint64_t mouse_enable_at = 0;
 #endif
 
-void ps2_Poll() {
+#ifdef MOUSE_STANDOFF
+static int mousestandoff = 0;
+#endif
+
+void km_PollUSB() {
   int k;
 
   if (firsttime) {
@@ -458,7 +446,7 @@ void ps2_Poll() {
     firsttime = 0;
   }
 
-  if (!curr_legacy_mode) {
+  if (curr_legacy_mode != legacy_mode) {
     if (legacy_mode) {
       ps2_EnablePortEx(0, false, 1);
       ps2_EnablePortEx(0, true, 0);
@@ -471,30 +459,30 @@ void ps2_Poll() {
       ps2_EnablePortEx(1, false, 0);
       ps2_EnablePortEx(1, true, 1);
       ps2_SwitchMode(1);
-#ifndef MB2
-      // reset
-      ps2_SendChar(0, 0xff);
-      ps2_SendChar(1, 0xff);
+      ps2_ResetDevice(0);
+      ps2_ResetDevice(1);
+
+#ifdef MOUSE_POST_RESET_ENABLE
       mouse_enable_at = time_us_64() + MOUSE_POST_RESET_ENABLE;
 #endif
     }
     curr_legacy_mode = legacy_mode;
   }
 
-#ifndef MB2
   /* issue mouse enable */
+#ifdef MOUSE_POST_RESET_ENABLE
   if (mouse_enable_at != 0 && time_us_64() > mouse_enable_at) {
     ps2_SendChar(1, 0xf4);
     mouse_enable_at = 0;
-    mousestandoff = 10;
+#ifdef MOUSE_STANDOFF
+    mousestandoff = MOUSE_STANDOFF;
+#endif
   }
 #endif
+}
 
-#if defined(MB2) && !defined(CORE2_IPC_TICKS)
-  ipc_MasterTick();
-#endif
-
-  int changed = 0;
+void km_PollPS2() {
+  int k, changed = 0;
   while ((k = ps2_GetChar(0)) >= 0) {
 	  debug(("[K%02X]\n", k));
     if (k == 0xe0) {
@@ -549,7 +537,7 @@ void ps2_Poll() {
   /* scan mouse messages */
   while ((k = ps2_GetChar(1)) >= 0) {
 	  debug(("[M%02X]\n", k));
-#ifndef MB2
+#ifdef MOUSE_STANDOFF
     if (mousestandoff) mousestandoff --;
     else 
 #endif
@@ -574,10 +562,12 @@ void ps2_Poll() {
     }
   }
 
-#ifndef MB2
+  // send anything that needs sending
   ps2_HealthCheck();
-#endif
-  // void user_io_kbd(unsigned char m, unsigned char *k, uint8_t priority, unsigned short vid, unsigned short pid);
-  // m = modifier, k = buffer of 6 keycodes; priority, vid = 0, pid = 0
-
 }
+
+void km_SetLegacyMode(uint8_t new_legacy_mode) {
+  printf("km_SetLegacyMode %d\n", new_legacy_mode);
+  legacy_mode = new_legacy_mode;
+}
+

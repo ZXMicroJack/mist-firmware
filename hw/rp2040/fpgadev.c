@@ -14,8 +14,10 @@
 #include "hardware/pio.h"
 
 #include "pins.h"
-#include "fpga.h"
+#include "fpgadev.h"
 #include "bitfile.h"
+#include "hardware.h"
+#include "platform.h"
 // #define DEBUG
 #include "rpdebug.h"
 
@@ -216,7 +218,15 @@ int fpga_configure(void *user_data, uint8_t (*next_block)(void *, uint8_t *), ui
   uint32_t totallen = assumelength;
   len = assumelength;
 #endif
-  
+
+  // probably this should not be here, this makes some space in PIO memory to
+  // load the FPGA routines.
+  platform_Sleep();
+
+  pio_add_program_at_offset(fpga_pio, &fpga_program, FPGA_OFFSET);
+  fpga_program_init(fpga_pio, fpga_sm, FPGA_OFFSET, 0);
+  pio_sm_clear_fifos(fpga_pio, fpga_sm);
+
   debug(("fpga_status: done %u nstatus %u\n", gpio_get(GPIO_FPGA_CONF_DONE), gpio_get(GPIO_FPGA_NSTATUS)));
   fpga_program_enable(fpga_pio, fpga_sm, 0, true);
 
@@ -245,7 +255,7 @@ int fpga_configure(void *user_data, uint8_t (*next_block)(void *, uint8_t *), ui
     }
     len -= thislen;
 
-    debug(("fpga_configure: remaining %u / %u %u %u %08X %08X %08X\n",
+    debug(("fpga_configure: remaining %u / %u %u %u %08X\n",
            len,
            totallen,
 #ifdef ALTERA_FPGA
@@ -253,7 +263,7 @@ int fpga_configure(void *user_data, uint8_t (*next_block)(void *, uint8_t *), ui
 #else
            gpio_get(GPIO_FPGA_INITB), 0,
 #endif
-           crc, crc32(0xffffffff, bits, thislen), gpio_get_all()));
+           gpio_get_all()));
 #ifdef ALTERA_FPGA
 #ifdef ALTERA_DONT_CHECK_DONE
   } while (len > 0 && next_block(user_data, bits) && gpio_get(GPIO_FPGA_NSTATUS));
@@ -279,6 +289,8 @@ int fpga_configure(void *user_data, uint8_t (*next_block)(void *, uint8_t *), ui
   pio_sm_set_enabled(fpga_pio, fpga_sm, false);
   fpga_program_enable(fpga_pio, fpga_sm, 0, false);
   pio_remove_program(fpga_pio, &fpga_program, FPGA_OFFSET);
+  platform_Wake();
+
 
 #if defined (ALTERA_FPGA) && !defined (ALTERA_DONT_CHECK_DONE)
   return (gpio_get(GPIO_FPGA_NSTATUS) && gpio_get(GPIO_FPGA_CONF_DONE)) ? 0 : 1;

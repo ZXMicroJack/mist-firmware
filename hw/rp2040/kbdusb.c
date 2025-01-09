@@ -22,23 +22,12 @@
 */
 
 #include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include "max3421e.h"
+
 #include "usb.h"
-#include "timer.h"
-#include "joystick.h"
-#include "joymapping.h"
-#include "mist_cfg.h"
-#include "state.h"
 #include "user_io.h"
 
 //#define DEBUG
-#include "debug.h"
-
-#include "host/usbh.h"
-#include "tusb_xinput/xinput_host.h"
-#include "host/usbh_classdriver.h"
+#include "rpdebug.h"
 
 static uint8_t usb_kbd_init(usb_device_t *dev, usb_device_descriptor_t *dev_desc) {
 	return 0;
@@ -64,4 +53,5 @@ static uint8_t usb_kbd_release(usb_device_t *dev) {
 }
 
 const usb_device_class_config_t usb_kbd_class = {
-  usb_kbd_init, usb_kbd_release, usb_kbd_poll };
+  usb_kbd_init, usb_kbd_release, usb_kbd_poll
+};

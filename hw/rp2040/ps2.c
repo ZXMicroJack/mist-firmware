@@ -3,6 +3,7 @@
 #include <pico/time.h>
 #include <string.h>
 
+#include "hardware/pio.h"
 #include "hardware/clocks.h"
 #include "hardware/structs/clocks.h"
 #include "pico/stdlib.h"
@@ -10,13 +11,9 @@
 #include "pins.h"
 #include "ps2.h"
 #include "fifo.h"
+
 // #define DEBUG
 #include "rpdebug.h"
-
-/*************************************************************************************************************/
-// NEW PS2 using PIO
-
-#include "hardware/pio.h"
 
 #include "ps2.pio.h"
 #include "ps2tx.pio.h"
@@ -41,11 +38,6 @@ static uint ps2_offset = 0;
 
 /* calculate odd parity */
 static uint8_t parity(uint8_t d) {
-#if 0 /* keeping this here as a reminder that no-one is immune to stupidity */
-//   d ^= d << 4;
-//   d ^= d << 2;
-//   d ^= d << 1;
-#endif
   d ^= d >> 4;
   d ^= d >> 2;
   d ^= d >> 1;
@@ -85,29 +77,6 @@ static void writePs2(PIO pio, uint sm, uint8_t data, int hostMode) {
   }
 }
 
-#ifdef PIOINTS
-static int nrints = 0;
-static void pio_callback() {
-  uint32_t _data;
-  pio_interrupt_clear (ps2host_pio, 0);
-
-  int c;
-  int ch = 0;
-
-  while ((c = readPs2(ps2host_pio, ps2host_sm)) >= 0) {
-    fifo_Put(&ps2port[ch].fifo_rx, c);
-  }
-
-  while (!pio_sm_is_tx_fifo_full(ps2host_pio, ps2host_sm) && (c = fifo_Get(&ps2port[ch].fifo)) >= 0) {
-    writePs2(ps2host_pio, ps2host_sm, c);
-  }
-
-  nrints++;
-}
-
-#define PS2_PIO_IRQ   PIO0_IRQ_1
-#endif
-
 void ps2_Init() {
   static int started = 0;
   if (started) return;
@@ -121,11 +90,6 @@ void ps2_Init() {
   ps2port[0].wait_time = 0;
   ps2port[1].wait_time = 0;
 
-#ifdef PIOINTS
-  irq_set_exclusive_handler (PS2_PIO_IRQ, pio_callback);
-  pio_set_irq0_source_enabled(ps2host_pio, ps2host_sm, true);
-  irq_set_enabled (PS2_PIO_IRQ, true);
-#endif
   started = 1;
 }
 
@@ -213,24 +177,17 @@ void ps2_HealthCheck() {
   }
 }
 
-
-void ps2_DebugQueues() {
-  int n = 0;
-  for (int i=0; i<NR_PS2; i++) {
-    int ch;
-    while ((ch = ps2_GetChar(i)) >= 0) {
-      printf("[RX%d:%02X]", i, ch);
-      n++;
-    }
-  }
-  if (n) printf("\n");
-#ifdef PIOINTS
-  if (nrints) { printf("nrints = %d\n", nrints); nrints = 0; }
-#endif
-}
-
 void ps2_EnablePort(uint8_t ch, bool enabled) {
   ps2_EnablePortEx(ch, enabled, 0);
 }
 
-void ps2_Debug() {}
+void ps2_Send(uint8_t *data, int len) {
+  uint8_t ch = data[0];
+  for (int i=1; i<len; i++) {
+    ps2_SendChar(ch, data[i]);
+  }
+}
+
+void ps2_ResetDevice(uint8_t ch) {
+  ps2_SendChar(ch, 0xff);
+}

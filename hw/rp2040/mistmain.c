@@ -158,11 +158,6 @@ int mist_init() {
 
     DISKLED_ON;
 
-#if !defined(MB2) && defined(PS2WAKEUP)
-    ps2_AttemptDetect(GPIO_PS2_CLK2, GPIO_PS2_DATA2);
-    ps2_AttemptDetect(GPIO_PS2_CLK, GPIO_PS2_DATA);
-#endif
-
     // Timer_Init();
     USART_Init(115200);
 
@@ -206,23 +201,15 @@ int mist_init() {
       if(!mmc_ok) {
 #ifdef USB_STORAGE
         if(!GetUSBStorageDevices()) {
-#ifdef BOOT_FLASH_ON_ERROR
-          BootFromFlash();
+          platform_FatalErrorOrBootFlash(ERROR_FILE_NOT_FOUND);
           return 0;
-#else
-          FatalError(ERROR_FILE_NOT_FOUND);
-#endif
         }
 
         fat_switch_to_usb();  // redirect file io to usb
 #else
         // no file to boot
-#ifdef BOOT_FLASH_ON_ERROR
-        BootFromFlash();
+        platform_FatalErrorOrBootFlash(ERROR_FILE_NOT_FOUND);
         return 0;
-#else
-        FatalError(ERROR_FILE_NOT_FOUND);
-#endif
 #endif
       }
 #ifdef USB_STORAGE
@@ -230,20 +217,13 @@ int mist_init() {
 #endif
 
     if (!FindDrive()) {
-#ifdef BOOT_FLASH_ON_ERROR
-        BootFromFlash();
-        return 0;
-#else
-        FatalError(ERROR_INVALID_DATA);
-#endif
+      platform_FatalErrorOrBootFlash(ERROR_INVALID_DATA);
+      return 0;
     }
 
     disk_ioctl(fs.pdrv, GET_SECTOR_COUNT, &storage_size);
     storage_size >>= 11;
 
-#ifdef ZXUNO
-    DWORD prev_cdir = fs.cdir;
-#endif
     ChangeDirectoryName(MIST_ROOT);
 
     arc_reset();
@@ -273,11 +253,7 @@ int mist_init() {
     } else {
         user_io_set_core_mod(mod);
         strncpy(s, arc_get_rbfname(), sizeof(s)-5);
-#ifdef XILINX
-        strcat(s,".BIT");
-#else
-        strcat(s,".RBF");
-#endif
+        strcat(s, "." COREEXT);
         fpga_init(s);
     }
 
@@ -312,43 +288,43 @@ int mist_loop() {
   usb_deferred_poll();
 #endif
 
-    if (legacy_mode) {
-      if (user_io_core_type() != CORE_TYPE_UNKNOWN) {
-        printf("setting legacy mode\n");
-        set_legacy_mode(0);
-      }
-    } else {
-      user_io_poll();
-
-      // MJ: check for legacy core and switch support on
-      if (user_io_core_type() == CORE_TYPE_UNKNOWN) {
-        set_legacy_mode(1);
-      }
-
-      // MIST (atari) core supports the same UI as Minimig
-      if((user_io_core_type() == CORE_TYPE_MIST) || (user_io_core_type() == CORE_TYPE_MIST2)) {
-        if(!fat_medium_present())
-          tos_eject_all();
-
-        HandleUI();
-      }
-
-      // call original minimig handlers if minimig core is found
-      if((user_io_core_type() == CORE_TYPE_MINIMIG) || (user_io_core_type() == CORE_TYPE_MINIMIG2)) {
-        if(!fat_medium_present())
-          EjectAllFloppies();
-
-        HandleFpga();
-        HandleUI();
-      }
-
-      // 8 bit cores can also have a ui if a valid config string can be read from it
-      if((user_io_core_type() == CORE_TYPE_8BIT) && user_io_is_8bit_with_config_string()) HandleUI();
-
-      // Archie core will get its own treatment one day ...
-      if(user_io_core_type() == CORE_TYPE_ARCHIE) HandleUI();
+  if (legacy_mode) {
+    if (user_io_core_type() != CORE_TYPE_UNKNOWN) {
+      printf("setting legacy mode\n");
+      set_legacy_mode(0);
     }
-    return 0;
+  } else {
+    user_io_poll();
+
+    // check for legacy core and switch support on
+    if (user_io_core_type() == CORE_TYPE_UNKNOWN) {
+      set_legacy_mode(1);
+    }
+
+    // MIST (atari) core supports the same UI as Minimig
+    if((user_io_core_type() == CORE_TYPE_MIST) || (user_io_core_type() == CORE_TYPE_MIST2)) {
+      if(!fat_medium_present())
+        tos_eject_all();
+
+      HandleUI();
+    }
+
+    // call original minimig handlers if minimig core is found
+    if((user_io_core_type() == CORE_TYPE_MINIMIG) || (user_io_core_type() == CORE_TYPE_MINIMIG2)) {
+      if(!fat_medium_present())
+        EjectAllFloppies();
+
+      HandleFpga();
+      HandleUI();
+    }
+
+    // 8 bit cores can also have a ui if a valid config string can be read from it
+    if((user_io_core_type() == CORE_TYPE_8BIT) && user_io_is_8bit_with_config_string()) HandleUI();
+
+    // Archie core will get its own treatment one day ...
+    if(user_io_core_type() == CORE_TYPE_ARCHIE) HandleUI();
+  }
+  return 0;
 }
 
 #ifdef USB
@@ -389,9 +365,6 @@ int main() {
 
 #if PICO_NO_FLASH
   sleep_ms(2000); // usb settle delay
-#endif
-
-#if PICO_NO_FLASH
   enable_xip();
 #endif
 
@@ -413,7 +386,7 @@ int main() {
 #endif
 
   for(;;) {
-    int c = getchar_timeout_us(2);
+    int c = getchar_timeout_us(0);
     if (c == 'q') break;
 
     mist_loop();

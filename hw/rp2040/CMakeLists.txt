@@ -7,7 +7,6 @@ include(pico_extras_import.cmake)
 project(pico_examples C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DIPC_MASTER -DPICO_XOSC_STARTUP_DELAY_MULTIPLIER=64 -DNR_PS2=2 -fsigned-char -DUSE_8BA -DSAMPLE_RATE=22050 -DSAMPLE_LEN=512 -DPICO_AUDIO_I2S_DATA_PIN=4 -DPICO_AUDIO_I2S_CLOCK_PIN_BASE=2 -DVE_STEPS=64 -DLFO_STEPS=64 -DNONAME -DPICO_AUDIO_I2S_PIO=1")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPICO_XOSC_STARTUP_DELAY_MULTIPLIER=64 -fsigned-char")
 
 # for alpine build of docker tools
@@ -167,8 +166,6 @@ target_compile_options(mistfirmwareusb PUBLIC
 ####################################################################################
 # Main build generic options
 set(common_opts
-  "-DVDATE=\"\""
-  "-Dhexdump=driver_hexdump"
   "-DUSB_DEBUG_OFF"
 )
 set(altera_opts

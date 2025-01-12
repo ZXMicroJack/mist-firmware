@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
+#include <stdint.h>
+// #include <stdbool.h>
+
 
 #include "pico/time.h"
 
@@ -102,121 +104,33 @@ uint8_t read_next_block_buffered(void *user_data, uint8_t *block) {
 }
 #endif
 
-//MJ TODO remove
-int ResetFPGA() {
-  /* initialise fpga */
-  fpga_initialise();
-  fpga_claim(true);
-
-  /* now configure */
-  return fpga_reset();
-}
-
-#ifdef BOOT_FLASH_ON_ERROR
-void BootFromFlash() {
-  debug(("BootFromFlash!\n"));
-  fpga_initialise();
-  fpga_claim(false);
-  int r = fpga_reset();
-  debug(("fpga_reset returns %d\n", r));
-}
-#endif
-
-#ifdef XILINX
-uint8_t chipType = A200T;
-
-uint32_t GotoBitstreamOffset(FIL *f, uint32_t len) {
-  // uint8_t *blk;
-  uint8_t blk[512];
-  UINT br;
-
-  if (f_read(f, blk, 512, &br) == FR_OK) {
-    if (blk[0] == 'M' && blk[1] == 'J' && blk[2] == 0x01 && blk[3] == 0x00) {
-      int o = 4 + fpga_GetType() * 4;
-      uint32_t offset = blk[o] | (blk[o+1]<<8) | (blk[o+2]<<16) | (blk[o+3]<<24);
-      uint32_t next_offset = blk[o+4] | (blk[o+5]<<8) | (blk[o+6]<<16) | (blk[o+7]<<24);
-      f_lseek(f, offset);
-      len = next_offset == 0 ? (len - offset) : (next_offset - offset);
-    } else {
-      f_lseek(f, 0);
-    }
-  }
-  return len;
-}
-#endif
-
 unsigned char ConfigureFpga(const char *bitfile) {
-  // configFpga cf;
   uint32_t fileSize;
   configFpga *cf;
 
-  debug(("ConfigureFpgaEx: %s\n", bitfile ? bitfile : "null"));
+  debug(("ConfigureFpga: %s\n", bitfile ? bitfile : "null"));
 
-  /* handle JTAGMODE - sleep for 60s and poll for recognisable core, 
-     otherwise, reset back to core menu. */
-  if (bitfile && !strncmp(bitfile, "JTAGMODE.", 9)) {
-    fpga_initialise();
-    fpga_claim(true);
-    fpga_reset();
+  int result = platform_ConfigureFPGAPrehook(bitfile);
 
-    int n = 60;
-    while (n--) {
-      sleep_ms(1000);
-      user_io_detect_core_type();
-      if (user_io_core_type() != CORE_TYPE_UNKNOWN) {
-        break;
-      }
-    }
-
-    // If core was detected, then return SUCCESS, otherwise
-    // load the default core.
-    if (n>0) {
-      return 1;
-    } else {
-      bitfile = NULL;
-    }
-  }
-
-  /* boot from flash */
-#ifdef XILINX // go to flash boot
-  if (bitfile && !strcmp(bitfile, "ZXTRES.BIT")) {
-    fpga_initialise();
-    fpga_claim(false);
-    fpga_reset();
-    return 1;
-  }
-#endif
+  if (result > 0) return 1; /* handled in prehook - don't load here */
+  if (result < 0) bitfile = NULL; /* failed prehook, load default core */
 
   cf = (configFpga *)malloc(sizeof (configFpga));
 
-#ifdef XILINX
-  if (f_open(&cf->file, bitfile ? bitfile : "CORE.BIT", FA_READ) != FR_OK) {
-#else
-  if (f_open(&cf->file, bitfile ? bitfile : "CORE.RBF", FA_READ) != FR_OK) {
-#endif
+  if (f_open(&cf->file, bitfile ? bitfile : "CORE." COREEXT, FA_READ) != FR_OK) {
     iprintf("No FPGA configuration file found %s!\r", bitfile);
     free(cf);
-#ifdef BOOT_FLASH_ON_ERROR
-    printf("!!! booting from flash!!!\n");
-    BootFromFlash();
-    return 1;
-#else
-    FatalError(4);
-#endif
+    return platform_FatalErrorOrBootFlash(4);
   }
 
+  /* initially set to file size */
   fileSize = cf->size = f_size(&cf->file);
   cf->error = 0;
 
-  debug(("cf.size = %ld\n", cf->size));
-  iprintf("FPGA bitstream file %s opened, file size = %ld\r", bitfile, cf->size);
+  debug(("ConfigureFpga: file opened cf.size = %ld\n", cf->size));
 
-#ifdef XILINX
-  if (bitfile && !strcasecmp(&bitfile[strlen(bitfile)-4], ".ZXT")) {
-    debug(("!!! it's a ZXT format chiptype is %d\n", fpga_GetType()));
-    fileSize = cf->size = GotoBitstreamOffset(&cf->file, fileSize);
-  }
-#endif
+  /* handle platform specific filetypes */
+  fileSize = cf->size = platform_ConfigureFPGAGetSize(bitfile, &cf->file, fileSize);
 
   /* initialise fpga */
   fpga_initialise();
@@ -224,24 +138,20 @@ unsigned char ConfigureFpga(const char *bitfile) {
 #ifdef BUFFER_FPGA
   cf->l = cf->r = cf->c = 0;
   read_next_block_buffered_fill(cf);
+#endif
 
-#ifdef XILINX
-  // try to figure out actual bitstream size
-  uint32_t bslen = bitfile_get_length(cf->buff[0], 0, &chipType);
-  if (bslen && bslen != 0xffffffff) {
-    cf->size = bslen - (BUFFER_SIZE * 512);
-    debug(("ConfigureFpga: corrected bitlen to %d\n", cf->size));
+  /* initialise fpga */
+  fpga_initialise();
+  fpga_claim(true);
+
+  /* now configure */
+  int r = fpga_reset();
+  if (r) {
+    debug(("Failed: FPGA reset returns %d\n", r));
+    f_close(&cf->file);
+    free(cf);
+    return 0;
   }
-#endif
-#endif
-
-    int r = ResetFPGA();
-    if (r) {
-      debug(("Failed: FPGA reset returns %d\n", r));
-      f_close(&cf->file);
-      free(cf);
-      return 0;
-    }
 
 #ifdef BUFFER_FPGA
   fpga_configure(cf, read_next_block_buffered, fileSize);
@@ -250,7 +160,7 @@ unsigned char ConfigureFpga(const char *bitfile) {
 #endif
   fpga_claim(false);
 
-  int result = !cf->error;
+  result = !cf->error;
   free(cf);
 
   // returns 1 if success / 0 on fail

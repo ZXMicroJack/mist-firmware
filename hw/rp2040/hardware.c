@@ -143,8 +143,6 @@ int GetRTTC() {
   return time_us_64() / 1000;
 }
 
-//TODO MJ 1 ms precision timer to 4s
-// 12 bits accuracy at 1ms = 4096 ms 
 unsigned long GetTimer(unsigned long offset)
 {
   return (time_us_64() / 1000) + offset;
@@ -181,12 +179,6 @@ unsigned char MenuButton() {
 unsigned char UserButton() {
   return 0;
 }
-
-#define GPIO_JRT        28
-#define GPIO_JLT        15
-#define GPIO_JDN        14
-#define GPIO_JUP        12
-#define GPIO_JF1        11
 
 #ifdef DB9_GPIO
 void InitDB9() {

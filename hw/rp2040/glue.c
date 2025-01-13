@@ -1,43 +1,29 @@
 #include <stdio.h>
-#include <stdarg.h>
 #include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
+
+#include "pico/bootrom.h"
+#include "pico/time.h"
 
 #include "errors.h"
-#include "usb/usb.h"
 #include "version.h"
-#include "fifo.h"
 #include "pins.h"
-// #include "crc16.h"
 #include "FatFs/ff.h"
 
 //#define DEBUG
 #include "rpdebug.h"
 
-#include "pico/bootrom.h"
-#include "pico/time.h"
-
-//TODO MJ non USB stuff here
+/* not implemented yet */
 void MCUReset() {}
 void PollADC() {}
-// void InitADC() {}
 
+/* not implemented yet */
+bool eth_present = 0;
 static uint8_t mac[] = {1,2,3,4,5,6};
 uint8_t *get_mac() {
   return mac;
 }
 
-//TODO MJ USB storage
-void storage_control_poll() {
-}
-
-//TODO MJ No WiFi present at the moment - would need routing through fpga
-bool eth_present = 0;
-
-// #if defined(USBFAKE) || !defined(USB)
-//TODO MJ PL2303 is a non CDC serial port over USB - maybe can use?
+/* not implemented yet */
 int8_t pl2303_present(void) {
   return 0;
 }
@@ -57,17 +43,16 @@ uint8_t get_pl2303s(void) {
   return 0;
 }
 
-// STUBS
-void usb_dev_open(void) {}
+/* stubbed out */
 void usb_dev_reconnect(void) {}
 
-// TODO IMPLEMENT
+/* not implemented yet */
 uint8_t  usb_cdc_is_configured(void) { return 0; }
 uint16_t usb_cdc_write(const char *pData, uint16_t length) { return 0; }
 uint16_t usb_cdc_read(char *pData, uint16_t length) { return 0; }
 
 #ifndef USB
-// return number of joysticks
+/* stubbed out - usb stuff */
 uint8_t joystick_count() { return 0; }
 
 void hid_set_kbd_led(unsigned char led, bool on) {
@@ -90,13 +75,11 @@ void hid_joystick_button_remap_init() {}
 char hid_joystick_button_remap(char *s, char action, int tag) {
   return 0;
 }
-#endif
 
-void usb_hw_init() {}
-#ifndef USB
 void usb_init() {}
 #endif
 
+/* not implemented yet */
 void WriteFirmware(char *name) {
   debug(("WriteFirmware: name:%s\n", name));
   reset_usb_boot(0, 0);

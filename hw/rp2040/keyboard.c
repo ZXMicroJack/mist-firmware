@@ -567,7 +567,7 @@ void km_PollPS2() {
 }
 
 void km_SetLegacyMode(uint8_t new_legacy_mode) {
-  printf("km_SetLegacyMode %d\n", new_legacy_mode);
+  debug(("km_SetLegacyMode %d\n", new_legacy_mode));
   legacy_mode = new_legacy_mode;
 }
 

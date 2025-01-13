@@ -2,15 +2,7 @@
 #include <stdint.h>
 #include <pico/time.h>
 
-#include "hardware/clocks.h"
-#include "hardware/structs/clocks.h"
-#include "hardware/flash.h"
-#include "hardware/resets.h"
-
-#include "pico/bootrom.h"
 #include "pico/stdlib.h"
-#include "pico/bootrom.h"
-
 #include "hardware/pio.h"
 
 #include "pins.h"
@@ -26,10 +18,9 @@
 
 #define RESET_TIMEOUT 100000
 
-uint8_t inited = 0;
-
-PIO fpga_pio = FPGA_PIO;
-unsigned fpga_sm = FPGA_SM;
+static uint8_t inited = 0;
+static PIO fpga_pio = FPGA_PIO;
+static unsigned fpga_sm = FPGA_SM;
 
 int fpga_initialise() {
   if (inited) return 0;

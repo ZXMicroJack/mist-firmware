@@ -257,7 +257,6 @@ int mist_init() {
         fpga_init(s);
     }
 
-    usb_dev_open();
     set_legacy_mode(user_io_core_type() == CORE_TYPE_UNKNOWN);
 
     return 0;
@@ -283,7 +282,6 @@ int mist_loop() {
   km_PollPS2();
 
   cdc_control_poll();
-  storage_control_poll();
 #ifdef USB
   usb_deferred_poll();
 #endif

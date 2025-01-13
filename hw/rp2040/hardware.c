@@ -3,22 +3,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "attrs.h"
-#include "hardware.h"
-#include "user_io.h"
-#include "xmodem.h"
-#include "ikbd.h"
-#include "usb.h"
-#include "pins.h"
-
 #include "pico/stdlib.h"
 #include "pico/time.h"
 
 #include "hardware/gpio.h"
 #include "hardware/uart.h"
 
-#include "usb/joymapping.h"
-#include "mist_cfg.h"
+#include "user_io.h"
 
 // #define DEBUG
 #include "rpdebug.h"
@@ -166,8 +157,8 @@ int GetSPICLK() {
   return 0;
 }
 
-// TODO MJ There are no switches or buttons on NeptUno
-// user, menu, DIP1, DIP2
+/* not implemented - There are no switches or buttons on NeptUno */
+/* user, menu, DIP1, DIP2 */
 unsigned char Buttons() {
   return 0;
 }
@@ -243,6 +234,6 @@ void DB9SetLegacy(uint8_t on) {}
 
 #endif
 
-/* doesn't do anything, but is needed to stub it out. */
+/* stubbed out */
 void usb_poll() {
 }

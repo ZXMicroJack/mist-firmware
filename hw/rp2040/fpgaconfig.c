@@ -2,26 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-// #include <stdbool.h>
-
 
 #include "pico/time.h"
 
 #include "errors.h"
 #include "hardware.h"
-#include "fdd.h"
-#include "user_io.h"
-#include "config.h"
-#include "boot.h"
-#include "osd.h"
-#include "fpga.h"
 #include "tos.h"
-#include "mist_cfg.h"
-#include "settings.h"
-#include "usb/joymapping.h"
 
 #include "fpgadev.h"
 #include "bitfile.h"
+#include "platform.h"
+
 //#define DEBUG
 #include "rpdebug.h"
 

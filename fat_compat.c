@@ -128,8 +128,9 @@ unsigned char FindDrive(void) {
 }
 
 // ExFat doesn't have directory backlink (..), thus need book-keeping the current directory
-void ChangeDirectoryName(unsigned char *name) {
+char ChangeDirectoryName(unsigned char *name) {
 	uint32_t      iPreviousDirectoryTmp = fs.cdir;
+  char result = 0; // assume error
 
 	iprintf("ChangeDirectoryName: %s -> %s = ", cwd, name);
 	if(name[0] == '/') {
@@ -157,9 +158,11 @@ void ChangeDirectoryName(unsigned char *name) {
 	if (f_chdir(sector_buffer) == FR_OK && fs.cdir != iPreviousDirectoryTmp) {
 		iPreviousDirectory = iPreviousDirectoryTmp;
 		strcpy(cwd, sector_buffer);
+    result = 1; // success
 	}
 
 	iprintf("%s\n", cwd);
+  return result;
 }
 
 // Simplified function which doesn't use any library routines

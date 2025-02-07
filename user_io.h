@@ -225,6 +225,7 @@ void user_io_mouse(unsigned char idx, unsigned char b, char x, char y, char z);
 void user_io_kbd(unsigned char m, unsigned char *k, uint8_t priority, unsigned short vid, unsigned short pid);
 #define CONFIG_ROOT 1   // create config filename in the root directory
 #define CONFIG_VHD  2   // create config filename according to VHD= in arc file
+#define CONFIG_REAL_ROOT 4   // create config filename in the real root directory
 char user_io_create_config_name(char *s, const char *ext, char flags);
 void user_io_digital_joystick(unsigned char, unsigned char);
 void user_io_digital_joystick_ext(unsigned char, uint32_t);

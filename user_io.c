@@ -182,6 +182,9 @@ char user_io_create_config_name(char *s, const char *ext, char flags) {
 	if (!p || !*p) p = user_io_get_core_name();
 	if(p[0]) {
 		if (flags & CONFIG_ROOT) strcpy(s,MIST_ROOT); else s[0] = 0;
+#ifdef CHECK_REAL_ROOT
+    if (flags & CONFIG_REAL_ROOT) strcpy(s,"/"); else s[0] = 0;
+#endif
 		strcat(s, p);
 		if (ext) {
 			strcat(s,".");
@@ -342,7 +345,12 @@ void user_io_init_core() {
 		UINT br;
 		// try to load config
 
+#ifdef CHECK_REAL_ROOT
+    for (int r = CONFIG_ROOT; r <= CONFIG_REAL_ROOT; r<<=1)
+		if(!user_io_create_config_name(s, "CFG", r)) {
+#else
 		if(!user_io_create_config_name(s, "CFG", CONFIG_ROOT)) {
+#endif
 			iprintf("Loading config %s\n", s);
 
 			if (f_open(&file, s, FA_READ) == FR_OK)  {
@@ -355,12 +363,18 @@ void user_io_init_core() {
 					settings_load(false);
 				}
 				f_close(&file);
+#ifdef CHECK_REAL_ROOT
+        break;
+#endif
 			} else {
 				user_io_8bit_set_status(arc_get_default(), ~1);
 			}
 		}
 
 		// check if there's a <core>.rom or <core>.r0[1-6] present, send it via index 0-6
+#ifdef CHECK_REAL_ROOT
+    for (int r = CONFIG_ROOT; r <= CONFIG_REAL_ROOT; r<<=1)
+#endif
 		for (int i = 0; i < 7; i++) {
 			char ext[4];
 			if (!i) {
@@ -370,7 +384,11 @@ void user_io_init_core() {
 				ext[2] = '0'+i;
 			}
 			for (char root = 0; root <= 1; root++) {
+#ifdef CHECK_REAL_ROOT
+				if (!user_io_create_config_name(s, ext, root | r)) {
+#else
 				if (!user_io_create_config_name(s, ext, root)) {
+#endif
 					iprintf("Looking for %s\n", s);
 					if (f_open(&file, s, FA_READ) == FR_OK) {
 						data_io_file_tx(&file, i, ext);
@@ -381,12 +399,20 @@ void user_io_init_core() {
 			}
 		}
 
-		if(!user_io_create_config_name(s, "RAM", CONFIG_ROOT)) {
+#ifdef CHECK_REAL_ROOT
+    for (int r = CONFIG_ROOT; r <= CONFIG_REAL_ROOT; r<<=1)
+		if(!user_io_create_config_name(s, "RAM", r)) {
+#else
+    if(!user_io_create_config_name(s, "RAM", CONFIG_ROOT)) {
+#endif
 			iprintf("Looking for %s\n", s);
 			// check if there's a <core>.ram present, send it via index -1
 			if (f_open(&file, s, FA_READ) == FR_OK) {
 				data_io_file_tx(&file, -1, "RAM");
 				f_close(&file);
+#ifdef CHECK_REAL_ROOT
+        break;
+#endif
 			}
 		}
 		for (int i = 0; i < SD_IMAGES; i++) {
@@ -399,15 +425,27 @@ void user_io_init_core() {
 		}
 
 		// check if there's a <core>.vhd present
+#ifdef CHECK_REAL_ROOT
+    for (int r = CONFIG_ROOT; r <= CONFIG_REAL_ROOT; r<<=1)
+		if(!user_io_create_config_name(s, "VHD", CONFIG_ROOT | CONFIG_VHD | r)) {
+#else
 		if(!user_io_create_config_name(s, "VHD", CONFIG_ROOT | CONFIG_VHD)) {
+#endif
 			iprintf("Looking for %s\n", s);
 			if (!(core_features & FEAT_IDE0))
 				 user_io_file_mount(s, 0);
 
 			if (!user_io_is_mounted(0)) {
 				// check for <core>.HD0/1 files
+#ifdef CHECK_REAL_ROOT
+				if(!user_io_create_config_name(s, "HD0", CONFIG_ROOT | CONFIG_VHD | r)) {
+#else
 				if(!user_io_create_config_name(s, "HD0", CONFIG_ROOT | CONFIG_VHD)) {
+#endif
 					for (int i = 0; i < SD_IMAGES; i++) {
+#ifdef CHECK_REAL_ROOT
+            if (user_io_is_mounted(i)) continue;
+#endif
 						s[strlen(s)-1] = '0'+i;
 						iprintf("Looking for %s\n", s);
 						if ((core_features & (FEAT_IDE0 << (2*i))) == (FEAT_IDE0_ATA << (2*i))) {
@@ -2539,15 +2577,29 @@ unsigned char user_io_ext_idx(const char *name, const char* ext) {
 }
 
 void user_io_change_into_core_dir(void) {
-
+#ifdef CHECK_REAL_ROOT
+  for (int i=0; i<2; i++) {
+#endif
 	if (arc_get_dirname()[0]) {
+#ifdef CHECK_REAL_ROOT
+		strcpy(s, i == 0 ? "/" : MIST_ROOT);
+#else
 		strcpy(s, MIST_ROOT);
+#endif
 		strcat(s, arc_get_dirname());
 	} else {
+#ifdef CHECK_REAL_ROOT
+		user_io_create_config_name(s, 0, i == 0 ? CONFIG_REAL_ROOT : CONFIG_ROOT);
+#else
 		user_io_create_config_name(s, 0, CONFIG_ROOT);
+#endif
 	}
 	// try to change into subdir named after the core
 	iprintf("Trying to open work dir \"%s\"\n", s);
+#ifndef CHECK_REAL_ROOT
 	ChangeDirectoryName(s);
-
+#else
+  if (ChangeDirectoryName(s)) break;
+  }
+#endif
 }

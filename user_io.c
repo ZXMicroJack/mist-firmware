@@ -1303,14 +1303,14 @@ void user_io_poll() {
 	// poll db9 joysticks
 	unsigned char joy_map = 0;
 
-	if(GetDB9(0, &joy_map)) {
+	if(GetDB9(0 ^ mist_cfg.joystick_db9_swap , &joy_map)) {
 		joy_map = virtual_joystick_mapping(0x00db, 0x0000, joy_map);
 		uint8_t idx = user_io_joystick_renumber(0);
 		if (!user_io_osd_is_visible()) user_io_joystick(idx, joy_map);
 		StateJoySet(joy_map, mist_cfg.joystick_db9_fixed_index ? idx : joystick_count()); // send to OSD
 		virtual_joystick_keyboard_idx(idx, joy_map);
 	}
-	if(GetDB9(1, &joy_map)) {
+	if(GetDB9(1 ^ mist_cfg.joystick_db9_swap, &joy_map)) {
 		joy_map = virtual_joystick_mapping(0x00db, 0x0001, joy_map);
 		uint8_t idx = user_io_joystick_renumber(1);
 		if (!user_io_osd_is_visible()) user_io_joystick(idx, joy_map);

@@ -37,6 +37,7 @@ typedef struct {
   uint8_t sdram64;
   uint8_t amiga_mod_keys;
   uint8_t usb_storage;
+  uint8_t joystick_db9_swap;
 } mist_cfg_t;
 
 

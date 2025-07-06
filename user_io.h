@@ -234,12 +234,14 @@ void user_io_mouse(unsigned char idx, unsigned char b, char x, char y, char z);
 void user_io_kbd(unsigned char m, unsigned char *k, uint8_t priority, unsigned short vid, unsigned short pid);
 #define CONFIG_ROOT 1   // create config filename in the root directory
 #define CONFIG_VHD  2   // create config filename according to VHD= in arc file
+#define CONFIG_REAL_ROOT 4   // create config filename in the real root directory
 char user_io_create_config_name(char *s, const char *ext, char flags);
 void user_io_digital_joystick(unsigned char, unsigned char);
 void user_io_digital_joystick_ext(unsigned char, uint32_t);
 void user_io_analog_joystick(unsigned char, char, char, char, char);
 char user_io_osd_is_visible();
 void user_io_send_buttons(char);
+uint8_t user_io_joystick_renumber(uint8_t j);
 char user_io_i2c_write(unsigned char addr, unsigned char subaddr, unsigned char data);
 char user_io_i2c_read(unsigned char addr, unsigned char subaddr, unsigned char *data);
 

@@ -61,10 +61,12 @@ static const ini_var_t config_ini_vars[] = {
 };
 
 // TODO fix SPIN macros all over the place!
+#ifndef NOSPIN
 #define SPIN() asm volatile ( "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0")
+#endif
 
 static void ClearKickstartMirrorE0(void)
 {
@@ -104,7 +106,7 @@ char UploadKickstart(char *name)
   FIL romfile, keyfile;
 
   ResetMenu();
-  ChangeDirectoryName("/");
+  ChangeDirectoryName(MIST_ROOT);
 
   BootPrint("Checking for Amiga Forever key file:");
   if(FileOpenCompat(&keyfile,"ROM     KEY", FA_READ) == FR_OK) {
@@ -474,7 +476,7 @@ static void ApplyConfiguration(char reloadkickstart)
     hardfile[i] = &config.hardfile[i];
 
   ResetMenu();
-  ChangeDirectoryName("/");
+  ChangeDirectoryName(MIST_ROOT);
 
   // Whether or not we uploaded a kickstart image we now need to set various parameters from the config.
   for (int i = 0; i < HARDFILES; i++) {

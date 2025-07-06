@@ -67,6 +67,7 @@ register char * stack_ptr asm ("sp");
 
 /* following is copied from libc/stdio/local.h to check std streams */
 extern void   __sinit (struct _reent *);
+#if 0
 #define CHECK_INIT(ptr) \
   do						\
     {						\
@@ -74,7 +75,9 @@ extern void   __sinit (struct _reent *);
 	__sinit (ptr);				\
     }						\
   while (0)
-
+#else
+#define CHECK_INIT(ptr)
+#endif
 /* Adjust our internal handles to stay away from std* handles.  */
 #define FILE_HANDLE_OFFSET (0x20)
 

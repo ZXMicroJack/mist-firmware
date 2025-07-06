@@ -16,10 +16,12 @@
 #include "cue_parser.h"
 
 // TODO!
+#ifndef NOSPIN
 #define SPIN() asm volatile ( "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0");
+#endif
 extern unsigned char drives;
 extern adfTYPE df[4];
 static hardfileTYPE t_hardfile[HARDFILES]; // temporary copy of former hardfile configuration
@@ -286,12 +288,14 @@ static char GetMenuPage_Minimig(uint8_t idx, char action, menu_page_t *page) {
 			case 0:
 				// set helptext with core display on top of basic info
 				page->title = "Minimig";
+#ifndef NO_CUSTOM_HELPTEXT
 				strcpy(helptext_custom, HELPTEXT_SPACER);
 				strcat(helptext_custom, OsdCoreName());
 				siprintf(s, "%s v%d.%d.%d", minimig_ver_beta ? " BETA" : "", minimig_ver_major, minimig_ver_minor, minimig_ver_minion);
 				strcat(helptext_custom, s);
 				strcat(helptext_custom, helptexts[HELPTEXT_MAIN]);
 				helptext=helptext_custom;
+#endif
 				break;
 			case 1:
 				page->title = "Harddisks";

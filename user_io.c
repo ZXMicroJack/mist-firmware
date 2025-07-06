@@ -200,7 +200,10 @@ char user_io_create_config_name(char *s, const char *ext, char flags) {
 	if (flags & CONFIG_VHD) p = arc_get_vhdname();
 	if (!p || !*p) p = user_io_get_core_name();
 	if(p[0]) {
-		if (flags & CONFIG_ROOT) strcpy(s,"/"); else s[0] = 0;
+		if (flags & CONFIG_ROOT) strcpy(s,MIST_ROOT); else s[0] = 0;
+#ifdef CHECK_REAL_ROOT
+    if (flags & CONFIG_REAL_ROOT) strcpy(s,"/"); else s[0] = 0;
+#endif
 		strcat(s, p);
 		if (ext) {
 			strcat(s,".");
@@ -361,7 +364,12 @@ void user_io_init_core() {
 		UINT br;
 		// try to load config
 
+#ifdef CHECK_REAL_ROOT
+    for (int r = CONFIG_ROOT; r <= CONFIG_REAL_ROOT; r<<=1)
+		if(!user_io_create_config_name(s, "CFG", r)) {
+#else
 		if(!user_io_create_config_name(s, "CFG", CONFIG_ROOT)) {
+#endif
 			iprintf("Loading config %s\n", s);
 
 			if (f_open(&file, s, FA_READ) == FR_OK)  {
@@ -374,12 +382,18 @@ void user_io_init_core() {
 					settings_load(false);
 				}
 				f_close(&file);
+#ifdef CHECK_REAL_ROOT
+        break;
+#endif
 			} else {
 				user_io_8bit_set_status(arc_get_default(), ~1);
 			}
 		}
 
 		// check if there's a <core>.rom or <core>.r0[1-6] present, send it via index 0-6
+#ifdef CHECK_REAL_ROOT
+    for (int r = CONFIG_ROOT; r <= CONFIG_REAL_ROOT; r<<=1)
+#endif
 		for (int i = 0; i < 7; i++) {
 			char ext[4];
 			if (!i) {
@@ -389,7 +403,11 @@ void user_io_init_core() {
 				ext[2] = '0'+i;
 			}
 			for (char root = 0; root <= 1; root++) {
+#ifdef CHECK_REAL_ROOT
+				if (!user_io_create_config_name(s, ext, root | r)) {
+#else
 				if (!user_io_create_config_name(s, ext, root)) {
+#endif
 					iprintf("Looking for %s\n", s);
 					if (f_open(&file, s, FA_READ) == FR_OK) {
 						data_io_file_tx(&file, i, ext);
@@ -400,12 +418,20 @@ void user_io_init_core() {
 			}
 		}
 
-		if(!user_io_create_config_name(s, "RAM", CONFIG_ROOT)) {
+#ifdef CHECK_REAL_ROOT
+    for (int r = CONFIG_ROOT; r <= CONFIG_REAL_ROOT; r<<=1)
+		if(!user_io_create_config_name(s, "RAM", r)) {
+#else
+    if(!user_io_create_config_name(s, "RAM", CONFIG_ROOT)) {
+#endif
 			iprintf("Looking for %s\n", s);
 			// check if there's a <core>.ram present, send it via index -1
 			if (f_open(&file, s, FA_READ) == FR_OK) {
 				data_io_file_tx(&file, -1, "RAM");
 				f_close(&file);
+#ifdef CHECK_REAL_ROOT
+        break;
+#endif
 			}
 		}
 		for (int i = 0; i < SD_IMAGES; i++) {
@@ -418,15 +444,27 @@ void user_io_init_core() {
 		}
 
 		// check if there's a <core>.vhd present
+#ifdef CHECK_REAL_ROOT
+    for (int r = CONFIG_ROOT; r <= CONFIG_REAL_ROOT; r<<=1)
+		if(!user_io_create_config_name(s, "VHD", CONFIG_ROOT | CONFIG_VHD | r)) {
+#else
 		if(!user_io_create_config_name(s, "VHD", CONFIG_ROOT | CONFIG_VHD)) {
+#endif
 			iprintf("Looking for %s\n", s);
 			if (!(core_features & FEAT_IDE0))
 				 user_io_file_mount(s, 0);
 
 			if (!user_io_is_mounted(0)) {
 				// check for <core>.HD0/1 files
+#ifdef CHECK_REAL_ROOT
+				if(!user_io_create_config_name(s, "HD0", CONFIG_ROOT | CONFIG_VHD | r)) {
+#else
 				if(!user_io_create_config_name(s, "HD0", CONFIG_ROOT | CONFIG_VHD)) {
+#endif
 					for (int i = 0; i < SD_IMAGES; i++) {
+#ifdef CHECK_REAL_ROOT
+            if (user_io_is_mounted(i)) continue;
+#endif
 						s[strlen(s)-1] = '0'+i;
 						iprintf("Looking for %s\n", s);
 						if ((core_features & (FEAT_IDE0 << (2*i))) == (FEAT_IDE0_ATA << (2*i))) {
@@ -546,6 +584,16 @@ static char dig2ana(char min, char max) {
 
 void user_io_joystick(unsigned char joystick, uint16_t map) {
   // digital joysticks also send analog signals
+	user_io_digital_joystick(joystick, map);
+	user_io_digital_joystick_ext(joystick, map);
+	user_io_analog_joystick(joystick, 
+		       dig2ana(map&JOY_LEFT, map&JOY_RIGHT),
+		       dig2ana(map&JOY_UP, map&JOY_DOWN),
+		       0 ,0);
+}
+
+void user_io_joystick16(unsigned char joystick, unsigned short map) {
+	// digital joysticks also send analog signals
 	user_io_digital_joystick(joystick, map);
 	user_io_digital_joystick_ext(joystick, map);
 	user_io_analog_joystick(joystick, 
@@ -716,7 +764,7 @@ void user_io_eth_send_rx_frame(uint8_t *s, uint16_t len) {
 // becomes joystick 1 and only the second one becomes joystick 0
 // (mouse port)
 
-static uint8_t joystick_renumber(uint8_t j) {
+uint8_t user_io_joystick_renumber(uint8_t j) {
 	uint8_t usb_sticks = joystick_count();
 
 	// no usb sticks present: no changes are being made
@@ -744,8 +792,8 @@ static uint8_t joystick_renumber(uint8_t j) {
 static void user_io_joystick_emu() {
 	// iprintf("joystick_emu_fixed_index: %d\n", mist_cfg.joystick_emu_fixed_index);
 	// joystick emulation also follows renumbering if requested (default)
-	if(emu_mode == EMU_JOY0) user_io_joystick(mist_cfg.joystick_emu_fixed_index ? 0 : joystick_renumber(0), emu_state);
-	if(emu_mode == EMU_JOY1) user_io_joystick(mist_cfg.joystick_emu_fixed_index ? 1 : joystick_renumber(1), emu_state);
+	if(emu_mode == EMU_JOY0) user_io_joystick(mist_cfg.joystick_emu_fixed_index ? 0 : user_io_joystick_renumber(0), emu_state);
+	if(emu_mode == EMU_JOY1) user_io_joystick(mist_cfg.joystick_emu_fixed_index ? 1 : user_io_joystick_renumber(1), emu_state);
 }
 
 // 16 byte fifo for amiga key codes to limit max key rate sent into the core
@@ -1330,11 +1378,11 @@ void user_io_poll() {
 	// poll db9 joysticks
 	uint16_t joy_state = 0, joy_map = 0;
 
-	if(GetDB9(0, &joy_state)) {
+	if(GetDB9(0 ^ mist_cfg.joystick_db9_swap, &joy_state)) {
 
 		joy_map = virtual_joystick_mapping(0x00db, 0x0000, joy_state);
 
-		uint8_t idx = joystick_renumber(0);
+		uint8_t idx = user_io_joystick_renumber(0);
 		uint8_t id = mist_cfg.joystick_db9_fixed_index ? idx : joystick_count();
 		if (!user_io_osd_is_visible()) user_io_joystick(idx, joy_map);
 		StateUsbIdSet(0x00db, 0x0000, 2, id);
@@ -1343,11 +1391,11 @@ void user_io_poll() {
 		StateUsbJoySet(joy_state, joy_state >> 8, id);
 		virtual_joystick_keyboard(joy_map);
 	}
-	if(GetDB9(1, &joy_state)) {
+	if(GetDB9(1 ^ mist_cfg.joystick_db9_swap, &joy_state)) {
 
 		joy_map = virtual_joystick_mapping(0x00db, 0x0001, joy_state);
 
-		uint8_t idx = joystick_renumber(1);
+		uint8_t idx = user_io_joystick_renumber(1);
 		uint8_t id = mist_cfg.joystick_db9_fixed_index ? idx : joystick_count() + 1;
 		if (!user_io_osd_is_visible()) user_io_joystick(idx, joy_map);
 		StateUsbIdSet(0x00db, 0x0001, 2, id);

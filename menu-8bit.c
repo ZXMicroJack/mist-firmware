@@ -49,6 +49,17 @@ static unsigned char selected_drive_slot;
 static RomType romtype;
 static char data_processor_id[4]; //Max 3 chars, plus null at end
 
+#ifdef RP2040
+static void strpad(char *d, char c, int n) {
+	while (*d) d++;
+	while (n > 0) {
+    *d++ = c;
+    n--;
+  } 
+	*d = '\0';
+}
+#endif
+
 static void substrcpy(char *d, char *s, char idx) {
 	char p = 0;
 
@@ -419,8 +430,8 @@ static char GetMenuItem_8bit(uint8_t idx, char action, menu_item_t *item) {
 			s[0] = ' ';
 			substrcpy(s+1, p, 1);
 			strcat(s, ":");
-			l = 26-l-strlen(s); 
-			while(l-- >= 0) strcat(s, " ");
+			l = 26-l-strlen(s);
+			strpad(s, ' ', l);
 			substrcpy(s+strlen(s), p, 2+x);
 		} else {
 			return 0;
@@ -489,10 +500,11 @@ void Setup8bitMenu() {
 	}
 
 	// set helptext with core display on top of basic info
+#ifndef NO_CUSTOM_HELPTEXT
 	strcpy(helptext_custom, HELPTEXT_SPACER);
 	strcat(helptext_custom, OsdCoreName());
 	strcat(helptext_custom, helptexts[HELPTEXT_MAIN]);
 	helptext=helptext_custom;
-
+#endif
 	SetupMenu(GetMenuPage_8bit, GetMenuItem_8bit, NULL);
 }

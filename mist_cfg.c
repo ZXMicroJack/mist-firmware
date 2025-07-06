@@ -69,7 +69,8 @@ mist_cfg_t mist_cfg = {
   .ypbpr = 0,
   .keep_video_mode = 0,
   .led_animation = 0,
-  .amiga_mod_keys = 0
+  .amiga_mod_keys = 0,
+  .joystick_db9_swap = 0
 };
 
 minimig_cfg_t minimig_cfg = {
@@ -114,6 +115,7 @@ const ini_var_t mist_ini_vars[] = {
   {"JOYSTICK_DEAD_RANGE", (void*)(&(mist_cfg.joystick_dead_range)), UINT8, 0, 255, 1},
   {"KEY_MENU_AS_RGUI", (void*)(&(mist_cfg.key_menu_as_rgui)), UINT8, 0, 1, 1},
   {"SDRAM64", (void*)(&(mist_cfg.sdram64)), UINT8, 0, 1, 1},
+  {"JOYSTICK_DB9_SWAP", (void*)(&(mist_cfg.joystick_db9_swap)), UINT8, 0, 1, 1},
 #ifdef JOY_DB9_MD
   {"JOYSTICK_DB9_MD", (void*)(&(mist_cfg.joystick_db9_md)), UINT8, 0, 2, 1},
 #endif
@@ -147,7 +149,7 @@ const ini_cfg_t mist_ini_cfg = {
 #ifdef INI_PARSER_TEST
   "test.ini",
 #else
-  "/MIST.INI",
+  MIST_ROOT"/MIST.INI",
 #endif
   mist_ini_sections,
   mist_ini_vars,

@@ -48,10 +48,12 @@ uint8_t rstval = 0;
 #define CMD_HDRID 0xAACA
 
 // TODO!
+#ifndef NOSPIN
 #define SPIN() asm volatile ( "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0\n\t" \
                               "mov r0, r0");
+#endif
 
 extern char s[FF_LFN_BUF + 1];
 extern adfTYPE df[4];
@@ -913,16 +915,18 @@ unsigned char GetFPGAStatus(void)
     return status;
 }
 
+#define d printf(__FILE__"[%d]\n", __LINE__);
+#undef printf
 
 unsigned char fpga_init(const char *name) {
   unsigned long time = GetRTTC();
   int loaded_from_usb = USB_LOAD_VAR;
-  unsigned char ct;
+  unsigned char ct;d
 
   // load the global MISTCFG.INI here
   // loading between the FPGA init and detect_core_type breaks with some SD-Cards. Reason unknown.
-  virtual_joystick_remap_init(false);
-  settings_load(true);
+  virtual_joystick_remap_init(false);d
+  settings_load(true);d
 
   iprintf("loaded_from_usb = %d\n", USB_LOAD_VAR == USB_LOAD_VALUE);
   USB_LOAD_VAR = 0;
@@ -934,17 +938,19 @@ unsigned char fpga_init(const char *name) {
     time = GetRTTC() - time;
     iprintf("FPGA configured in %lu ms\r", time);
   }
-
+printf("!!!! FPGA_INIT\n\n\n");
   // wait max 100 msec for a valid core type
-  time = GetTimer(100);
+  time = GetTimer(100);d
+//  time = GetTimer(5000);d
   do {
+	  printf("ct%02X\n", ct);
     EnableIO();
     ct = SPI(0xff);
     DisableIO();
     SPI_MINIMIGV1_HACK
   } while( ((ct == 0) || (ct == 0xff)) && !CheckTimer(time));
 
-  iprintf("ident = %x\n", ct);
+  iprintf("ident = %x\n", ct);d
 
   user_io_detect_core_type();
   user_io_init_core();

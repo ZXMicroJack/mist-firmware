@@ -108,6 +108,7 @@ const char *config_cpu_msg[] = {"68000", "68010", "68EC020","68020"};
 const char *config_autofire_msg[] = {"\n\n        AUTOFIRE OFF", "\n\n        AUTOFIRE FAST", "\n\n       AUTOFIRE MEDIUM", "\n\n        AUTOFIRE SLOW"};
 const char *days[] = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
 
+#ifndef NO_HELP_TEXTS
 const char *helptexts[]={
 	0,
 	"                                Welcome to MiST!  Use the cursor keys to navigate the menus.  Use space bar or enter to select an item.  Press Esc or F12 to exit the menus.  Joystick emulation on the numeric keypad can be toggled with the numlock key, while pressing Ctrl-Alt-0 (numeric keypad) toggles autofire mode.",
@@ -119,10 +120,14 @@ const char *helptexts[]={
 	"                                Press F1 to setup the button mapping of the current joystick. Press F2 to save the current mapping globally. Press F3 to save the current mapping to the actual core only.",
 	0
 };
-
+#else
+const char *helptexts[]={0,0,0,0,0,0,0,0,0};
+#endif
 // one screen width
 const char* HELPTEXT_SPACER= "                                ";
+#ifndef NO_CUSTOM_HELPTEXT
 char helptext_custom[450]; // spacer(32) + corename(64) + minimig version(16) + helptexts[x](335)
+#endif
 
 // file selection menu variables
 char fs_pFileExt[13] = "xxx";
@@ -377,7 +382,7 @@ static char CoreFileSelected(uint8_t idx, const char *SelectedName) {
 			return 0;
 		}
 		strcpy(s, arc_get_rbfname());
-		strcat(s, ".RBF");
+		strcat(s, "."COREEXT);
 		rbfname = (char*) &s;
 		arc = 1;
 	}
@@ -388,7 +393,7 @@ static char CoreFileSelected(uint8_t idx, const char *SelectedName) {
 	if (err == ERROR_BITSTREAM_OPEN && arc) {
 		strcpy(s, "/");
 		strcat(s, arc_get_rbfname());
-		strcat(s, ".RBF");
+		strcat(s, "."COREEXT);
 		err = fpga_init(s);
 	}
 	if (err != ERROR_NONE) FatalError(err);
@@ -555,6 +560,7 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					break;
 
 				// page 1 - firmware & core
+#ifndef RP2040
 				case 7:
 					siprintf(s, "   ARM  s/w ver. %s", version + 5);
 					item->item = s;
@@ -575,6 +581,34 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					item->active = fat_uses_mmc();
 					item->stipple = !item->active;
 					break;
+#else
+				case 7: {
+					extern const char firmwareVersion[];
+					siprintf(s, "   FIRM s/w ver. %s", firmwareVersion);
+					item->item = s;
+					item->active = 0;
+					break;
+			        }
+				case 8: {
+					extern const char *GetHKMVersion();
+					char *v = (char *)GetHKMVersion();
+					if (v) {
+            while (*v ++);
+						siprintf(s, "   %s  s/w ver. %s", v+1, GetHKMVersion());
+						item->item = s;
+					} else {
+						s[0] = 0;
+					}
+
+					item->item = s;
+					item->active = 0;
+					break;
+				}
+				case 9:
+					item->item = "      Platform settings";
+					item->active = 1;       
+					break;
+#endif
 				case 10:
 					item->active = 0;
 					break;
@@ -589,7 +623,7 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					break;
 				case 12:
 					if(arc_get_rbfname() && *arc_get_rbfname()) {
-						siprintf(s, "%*s%s.RBF", (29-strlen(arc_get_rbfname()))/2-2, " ", arc_get_rbfname());
+						siprintf(s, "%*s%s."COREEXT, (29-strlen(arc_get_rbfname()))/2-2, " ", arc_get_rbfname());
 						item->item = s;
 					}
 					item->active = 0;
@@ -895,6 +929,7 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 					break;
 
 				// page 1 - firmware & core
+#ifndef RP2040
 				case 9:
 					if (fat_uses_mmc()) {
 						if (CheckFirmware("/FIRMWARE.UPG"))
@@ -903,8 +938,15 @@ static char GetMenuItem_System(uint8_t idx, char action, menu_item_t *item) {
 							FirmwareUpdateError();
 					}
 					break;
+#else
+				case 9: {
+					extern void SetupPlatformMenu();
+					SetupPlatformMenu();
+					break;
+				}
+#endif
 				case 13:
-					SelectFileNG("RBFARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
+					SelectFileNG(COREEXT"ARC"COREEXTOTHER, SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
 					break;
 				case 21:
 				case 22:
@@ -1028,7 +1070,7 @@ void SelectFile(char* pFileExt, unsigned char Options, unsigned char MenuSelect,
 
 	if (strncmp(pFileExt, fs_pFileExt, 12) != 0) // check desired file extension
 	{ // if different from the current one go to the root directory and init entry buffer
-		ChangeDirectoryName("/");
+		ChangeDirectoryName(MIST_ROOT);
 
 		// for 8 bit cores try to 
 		if(((user_io_core_type() == CORE_TYPE_8BIT) || (user_io_core_type() == CORE_TYPE_ARCHIE)) && chdir)
@@ -1038,7 +1080,7 @@ void SelectFile(char* pFileExt, unsigned char Options, unsigned char MenuSelect,
 
 	menu_debugf("pFileExt = %3s\n", pFileExt);
 	strcpy(fs_pFileExt, pFileExt);
-	fs_ShowExt = ((strlen(fs_pFileExt)>3 && strncmp(fs_pFileExt, "RBFARC", 6)) || strchr(fs_pFileExt, '*') || strchr(fs_pFileExt, '?'));
+	fs_ShowExt = ((strlen(fs_pFileExt)>3 && strncmp(fs_pFileExt, COREEXT"ARC"COREEXTOTHER, 6)) || strchr(fs_pFileExt, '*') || strchr(fs_pFileExt, '?'));
 	fs_Options = Options;
 	fs_MenuSelect = MenuSelect;
 
@@ -1255,7 +1297,7 @@ void HandleUI(void)
 					}
 					// the "menu" core is special in jumps directly to the core selection menu
 					if(!strcmp(user_io_get_core_name(), "MENU") || (user_io_get_core_features() & FEAT_MENU)) {
-						SelectFileNG("RBFARC", SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
+						SelectFileNG(COREEXT"ARC"COREEXTOTHER, SCAN_LFN | SCAN_SYSDIR, CoreFileSelected, 0);
 					}
 				}
 

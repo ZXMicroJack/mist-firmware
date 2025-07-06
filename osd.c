@@ -337,6 +337,10 @@ void OsdPrintText(unsigned char line, char *text, unsigned long start, unsigned 
   int i,j;
   unsigned char stipplemask=0xff;
 
+  //unsigned long xoffset, unsigned char yoffset, unsigned char invert, unsigned char stipple
+  printf("OsdPrintText line %d text %s start %d width %d xoff %d yoff %d inv %d sti %d\n",
+    line, text, start, width, xoffset, yoffset, invert, stipple);
+
   if(stipple) {
     stipplemask=0x55;
     stipple=0xff;

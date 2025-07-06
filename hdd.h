@@ -61,7 +61,9 @@
 #define HDF_FILETYPE_RDB      2
 #define HDF_FILETYPE_DOS      3
 
+#ifndef HARDFILES
 #define HARDFILES 4
+#endif
 
 #define TFR_ERR    1
 #define TFR_SCOUNT 2

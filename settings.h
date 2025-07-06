@@ -17,3 +17,19 @@
 
 unsigned char settings_load(char global);
 unsigned char settings_save(char global);
+
+extern uint8_t joymenu_select;
+extern uint8_t joymenu_start;
+
+#ifndef COREEXTOTHER
+#define COREEXTOTHER
+#endif
+
+#ifndef MIST_ROOT
+#define MIST_ROOT "/"
+#endif
+
+#ifndef COREEXT
+#define COREEXT "RBF"
+#endif
+
